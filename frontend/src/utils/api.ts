@@ -1,48 +1,35 @@
-// Utility for making API requests to the backend
+import axios from 'axios';
 
-// Get the base API URL from environment variables
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+// Set base URL for API requests
+axios.defaults.baseURL = 'http://localhost:3000/api';
 
-// Generic fetch function
-async function fetchApi(endpoint: string, options: RequestInit = {}) {
-  const url = `${API_BASE_URL}${endpoint}`
-  
-  // Set default headers
-  const defaultHeaders = {
-    'Content-Type': 'application/json',
-    ...options.headers
-  }
-  
-  // Merge options with defaults
-  const config: RequestInit = {
-    ...options,
-    headers: defaultHeaders
-  }
-  
-  try {
-    const response = await fetch(url, config)
-    
-    if (!response.ok) {
-      throw new Error(`API request failed: ${response.statusText}`)
+// Add a request interceptor to include the token in headers
+axios.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    
-    return await response.json()
-  } catch (error) {
-    console.error('API request error:', error)
-    throw error
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-}
+);
 
-// API methods
-export default {
-  get: (endpoint: string) => fetchApi(endpoint, { method: 'GET' }),
-  post: (endpoint: string, data: any) => fetchApi(endpoint, { 
-    method: 'POST',
-    body: JSON.stringify(data)
-  }),
-  put: (endpoint: string, data: any) => fetchApi(endpoint, {
-    method: 'PUT',
-    body: JSON.stringify(data)
-  }),
-  delete: (endpoint: string) => fetchApi(endpoint, { method: 'DELETE' })
-}
+// Add a response interceptor to handle token expiration
+axios.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expired or invalid, redirect to login
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default axios;

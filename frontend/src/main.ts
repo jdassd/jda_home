@@ -1,27 +1,21 @@
 import { createApp } from 'vue'
-import './style.css'
-import App from './App.vue'
-
-// Import Pinia
 import { createPinia } from 'pinia'
-
-// Import Element Plus
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 
-// Import router
+import App from './App.vue'
 import router from './router'
+
+// Create pinia instance
+const pinia = createPinia()
 
 // Create app instance
 const app = createApp(App)
 
-// Use Pinia
-app.use(createPinia())
-
-// Use Element Plus
+// Use plugins
+app.use(pinia)
+app.use(router)
 app.use(ElementPlus)
 
-// Use router
-app.use(router)
-
+// Mount app
 app.mount('#app')

@@ -6,6 +6,13 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
+// Import database
+import sequelize from './config/database';
+import { initUserModel } from './models/User';
+
+// Initialize models
+initUserModel(sequelize);
+
 import routes from './routes';
 
 // Create Express app instance
@@ -23,6 +30,13 @@ app.use('/api', routes);
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
   res.status(500).send('Something went wrong!');
+});
+
+// Sync database
+sequelize.sync().then(() => {
+  console.log('Database synced successfully');
+}).catch((error) => {
+  console.error('Error syncing database:', error);
 });
 
 export default app;

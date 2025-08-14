@@ -1,4 +1,6 @@
 import express from 'express';
+import authRoutes from './authRoutes';
+
 const router = express.Router();
 
 // Import route handlers
@@ -7,11 +9,10 @@ router.get('/', (req, res) => {
   res.json({ message: 'API is running!' });
 });
 
-// Placeholder routes for future implementation
-router.use('/auth', (req, res) => {
-  res.status(500).json({ message: 'Not implemented yet' });
-});
+// Register auth routes
+router.use('/auth', authRoutes);
 
+// Placeholder routes for future implementation
 router.use('/users', (req, res) => {
   res.status(500).json({ message: 'Not implemented yet' });
 });

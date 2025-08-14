@@ -2,11 +2,32 @@
   <div class="home">
     <h1>私人导航主页</h1>
     <p>欢迎来到您的私人导航网站！</p>
+    <div v-if="authStore.isAuthenticated">
+      <p>您好，{{ authStore.user?.username }}!</p>
+      <el-button @click="handleLogout">退出登录</el-button>
+    </div>
+    <div v-else>
+      <p>请登录以访问您的个性化导航页面。</p>
+      <el-button @click="$router.push('/login')">登录</el-button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// Home page component
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '../stores/authStore';
+
+// Router
+const router = useRouter();
+
+// Auth store
+const authStore = useAuthStore();
+
+// Handle logout
+const handleLogout = () => {
+  authStore.logout();
+  router.push('/login');
+};
 </script>
 
 <style scoped>

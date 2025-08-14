@@ -14,7 +14,11 @@ const routes = [
     name: 'login',
     component: LoginView
   },
-  // Add more routes here as needed
+  {
+    path: '/register',
+    name: 'register',
+    component: LoginView
+  }
 ]
 
 // Create router instance
@@ -22,5 +26,17 @@ const router = createRouter({
   history: createWebHistory(),
   routes
 })
+
+// Navigation guard
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('token');
+  
+  // Redirect to login page if no token and trying to access protected routes
+  if (!token && to.name !== 'login' && to.name !== 'register') {
+    next({ name: 'login' });
+  } else {
+    next();
+  }
+});
 
 export default router
