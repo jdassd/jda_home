@@ -57,6 +57,18 @@ export const getLinksByCategory = async (req: Request, res: Response) => {
   }
 };
 
+// 默认图标数组
+const defaultIcons = [
+  '🔗', '🌐', '📚', '💼', '🎯', '🚀', '💡', '📝',
+  '🔍', '📊', '🎨', '🛠️', '📱', '💻', '🎮', '🎬',
+  '🎵', '📷', '✨', '⭐', '🔥', '⚡', '🌟', '🏆'
+];
+
+// 随机选择默认图标
+const getRandomDefaultIcon = () => {
+  return defaultIcons[Math.floor(Math.random() * defaultIcons.length)];
+};
+
 // Create a new link
 export const createLink = async (req: Request, res: Response) => {
   try {
@@ -65,8 +77,8 @@ export const createLink = async (req: Request, res: Response) => {
     
     // Validate required fields
     if (!categoryId || !title || !url) {
-      return res.status(400).json({ 
-        message: 'Category ID, title, and URL are required' 
+      return res.status(400).json({
+        message: 'Category ID, title, and URL are required'
       });
     }
     
@@ -93,6 +105,9 @@ export const createLink = async (req: Request, res: Response) => {
     
     const newOrder = maxOrderLink ? maxOrderLink.order + 1 : 0;
     
+    // 如果没有提供图标，使用随机默认图标
+    const finalIcon = icon || getRandomDefaultIcon();
+    
     // Create the link
     const link = await Link.create({
       userId,
@@ -100,7 +115,7 @@ export const createLink = async (req: Request, res: Response) => {
       title,
       url,
       description,
-      icon,
+      icon: finalIcon,
       order: newOrder
     });
     

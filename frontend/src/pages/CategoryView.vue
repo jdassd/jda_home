@@ -131,54 +131,69 @@
                   </button>
                 </div>
 
-                <!-- 链接列表 -->
+                <!-- 链接列表（支持拖拽排序） -->
                 <div v-if="getCategoryLinks(category.id).length > 0" class="links-list">
-                  <div
-                    v-for="link in getCategoryLinks(category.id)"
-                    :key="link.id"
-                    class="link-card"
+                  <draggable
+                    v-model="categoryLinksMap[category.id]"
+                    :group="`links-${category.id}`"
+                    item-key="id"
+                    @end="handleDragEnd(category.id)"
+                    handle=".drag-handle"
+                    animation="200"
                   >
-                    <div class="link-icon">
-                      <img 
-                        v-if="link.icon" 
-                        :src="link.icon" 
-                        :alt="link.title"
-                        @error="handleIconError($event, link.title)"
-                      />
-                      <span v-else class="icon-placeholder">
-                        {{ link.title.charAt(0).toUpperCase() }}
-                      </span>
-                    </div>
-                    <div class="link-info">
-                      <a :href="link.url" target="_blank" class="link-title">
-                        {{ link.title }}
-                      </a>
-                      <div class="link-url">{{ formatUrl(link.url) }}</div>
-                      <div v-if="link.description" class="link-description">
-                        {{ link.description }}
+                    <template #item="{ element: link }">
+                      <div class="link-card">
+                        <div class="drag-handle" title="拖拽排序">
+                          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M7 2a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0zM7 18a2 2 0 11-4 0 2 2 0 014 0zM17 2a2 2 0 11-4 0 2 2 0 014 0zM17 10a2 2 0 11-4 0 2 2 0 014 0zM17 18a2 2 0 11-4 0 2 2 0 014 0z"/>
+                          </svg>
+                        </div>
+                        <div class="link-icon">
+                          <img
+                            v-if="link.icon && !isEmoji(link.icon)"
+                            :src="link.icon"
+                            :alt="link.title"
+                            @error="handleIconError($event, link.title)"
+                          />
+                          <span v-else-if="link.icon && isEmoji(link.icon)" class="icon-emoji">
+                            {{ link.icon }}
+                          </span>
+                          <span v-else class="icon-placeholder">
+                            {{ link.title.charAt(0).toUpperCase() }}
+                          </span>
+                        </div>
+                        <div class="link-info">
+                          <a :href="link.url" target="_blank" class="link-title">
+                            {{ link.title }}
+                          </a>
+                          <div class="link-url">{{ formatUrl(link.url) }}</div>
+                          <div v-if="link.description" class="link-description">
+                            {{ link.description }}
+                          </div>
+                        </div>
+                        <div class="link-actions">
+                          <button
+                            @click="handleEditLink(link)"
+                            class="btn-icon small"
+                            title="编辑"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+                              <path d="M10.646.146a.5.5 0 01.708 0l2.5 2.5a.5.5 0 010 .708l-8 8a.5.5 0 01-.168.11l-3 1a.5.5 0 01-.65-.65l1-3a.5.5 0 01.11-.168l8-8zM11.207 2L2 11.207V11.5h.293a.5.5 0 01.5.5v.293L12 3.207 11.207 2z"/>
+                            </svg>
+                          </button>
+                          <button
+                            @click="handleDeleteLink(link)"
+                            class="btn-icon small danger"
+                            title="删除"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+                              <path d="M4.646 4.646a.5.5 0 01.708 0L7 6.293l1.646-1.647a.5.5 0 01.708.708L7.707 7l1.647 1.646a.5.5 0 01-.708.708L7 7.707 5.354 9.354a.5.5 0 01-.708-.708L6.293 7 4.646 5.354a.5.5 0 010-.708z"/>
+                            </svg>
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                    <div class="link-actions">
-                      <button
-                        @click="handleEditLink(link)"
-                        class="btn-icon small"
-                        title="编辑"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-                          <path d="M10.646.146a.5.5 0 01.708 0l2.5 2.5a.5.5 0 010 .708l-8 8a.5.5 0 01-.168.11l-3 1a.5.5 0 01-.65-.65l1-3a.5.5 0 01.11-.168l8-8zM11.207 2L2 11.207V11.5h.293a.5.5 0 01.5.5v.293L12 3.207 11.207 2z"/>
-                        </svg>
-                      </button>
-                      <button
-                        @click="handleDeleteLink(link)"
-                        class="btn-icon small danger"
-                        title="删除"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-                          <path d="M4.646 4.646a.5.5 0 01.708 0L7 6.293l1.646-1.647a.5.5 0 01.708.708L7.707 7l1.647 1.646a.5.5 0 01-.708.708L7 7.707 5.354 9.354a.5.5 0 01-.708-.708L6.293 7 4.646 5.354a.5.5 0 010-.708z"/>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
+                    </template>
+                  </draggable>
                 </div>
 
                 <!-- 空状态 -->
@@ -349,11 +364,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useCategoryStore, type Category } from '../stores/categoryStore'
 import { useLinkStore, type Link } from '../stores/linkStore'
 import MainLayout from '../layouts/MainLayout.vue'
+import draggable from 'vuedraggable'
 
 // Store
 const categoryStore = useCategoryStore()
@@ -368,6 +384,7 @@ const editingLink = ref<Link | null>(null)
 const currentCategoryId = ref<number | null>(null)
 const submitting = ref(false)
 const linkSubmitting = ref(false)
+const categoryLinksMap = ref<Record<number, Link[]>>({})
 
 // 表单数据
 const categoryForm = ref({
@@ -388,9 +405,44 @@ const recentAddedCount = computed(() => {
   return Math.floor(Math.random() * 5) + 1
 })
 
+// 检查是否为emoji
+const isEmoji = (str: string) => {
+  const emojiRegex = /^[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F000}-\u{1F02F}]|[\u{1F0A0}-\u{1F0FF}]|[\u{1F100}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{1F900}-\u{1F9FF}]$/u;
+  return emojiRegex.test(str);
+}
+
 // 获取分类下的链接
 const getCategoryLinks = (categoryId: number) => {
-  return linkStore.getLinksByCategory(categoryId)
+  return categoryLinksMap.value[categoryId] || []
+}
+
+// 监听链接变化，更新本地映射
+watch(() => linkStore.links, () => {
+  updateCategoryLinksMap()
+}, { deep: true })
+
+// 更新分类链接映射
+const updateCategoryLinksMap = () => {
+  const map: Record<number, Link[]> = {}
+  categoryStore.categories.forEach(category => {
+    map[category.id] = linkStore.getLinksByCategory(category.id)
+  })
+  categoryLinksMap.value = map
+}
+
+// 处理拖拽结束
+const handleDragEnd = async (categoryId: number) => {
+  try {
+    const links = categoryLinksMap.value[categoryId] || []
+    const linkIds = links.map(link => link.id)
+    await linkStore.reorderLinks(categoryId, linkIds)
+    ElMessage.success('排序已保存')
+  } catch (error) {
+    ElMessage.error('保存排序失败')
+    // 重新加载链接以恢复原始顺序
+    await linkStore.fetchLinks()
+    updateCategoryLinksMap()
+  }
 }
 
 // 切换分类展开/折叠
@@ -598,6 +650,8 @@ onMounted(async () => {
     ])
     // 设置默认排序值
     categoryForm.value.order = categoryStore.categories.length
+    // 初始化分类链接映射
+    updateCategoryLinksMap()
   } catch (error: any) {
     ElMessage.error('获取数据失败')
   }
@@ -899,12 +953,43 @@ onMounted(async () => {
   background: var(--bg-color);
   border-radius: 12px;
   transition: var(--transition-base);
+  cursor: move;
 }
 
 .link-card:hover {
   background: white;
   box-shadow: var(--shadow-sm);
   transform: translateX(4px);
+}
+
+.link-card.sortable-ghost {
+  opacity: 0.4;
+  background: var(--primary-bg);
+}
+
+.link-card.sortable-drag {
+  opacity: 0;
+}
+
+/* 拖拽手柄 */
+.drag-handle {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: grab;
+  flex-shrink: 0;
+  transition: var(--transition-base);
+}
+
+.drag-handle:hover {
+  color: var(--primary-color);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
 }
 
 .link-icon {
@@ -929,6 +1014,10 @@ onMounted(async () => {
   font-size: 20px;
   font-weight: 600;
   color: var(--primary-color);
+}
+
+.icon-emoji {
+  font-size: 24px;
 }
 
 .link-info {
