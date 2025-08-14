@@ -1,251 +1,380 @@
 <template>
-  <div class="category-manage">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <h2>分类管理</h2>
-          <el-button type="primary" @click="showAddDialog = true">
-            <el-icon><Plus /></el-icon>
-            添加分类
-          </el-button>
+  <MainLayout>
+    <div class="category-page">
+      <!-- 页面头部 -->
+      <div class="page-header">
+        <div class="header-content">
+          <div class="header-title">
+            <h1>分类管理</h1>
+            <p>管理您的导航分类和链接</p>
+          </div>
+          <div class="header-actions">
+            <button @click="showAddCategoryDialog = true" class="btn-add-category">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/>
+              </svg>
+              新建分类
+            </button>
+          </div>
         </div>
-      </template>
-
-      <!-- Loading state -->
-      <div v-if="categoryStore.loading" class="loading-container">
-        <el-skeleton :rows="5" animated />
       </div>
 
-      <!-- Categories list -->
-      <div v-else-if="categoryStore.categories.length > 0" class="categories-list">
-        <el-table
-          :data="categoryStore.categories"
-          style="width: 100%"
-          row-key="id"
-        >
-          <el-table-column type="expand">
-            <template #default="props">
-              <div class="links-section">
-                <div class="links-header">
-                  <h4>链接列表</h4>
-                  <el-button type="primary" size="small" @click="handleAddLink(props.row)">
-                    <el-icon><Plus /></el-icon>
-                    添加链接
-                  </el-button>
+      <!-- 统计卡片 -->
+      <div class="stats-cards">
+        <div class="stat-card gradient-primary">
+          <div class="stat-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="currentColor">
+              <path d="M14 6H6a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2V8a2 2 0 00-2-2zM26 6h-8a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2V8a2 2 0 00-2-2zM14 18H6a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-8a2 2 0 00-2-2zM26 18h-8a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-8a2 2 0 00-2-2z"/>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-number">{{ categoryStore.categories.length }}</div>
+            <div class="stat-label">总分类数</div>
+          </div>
+        </div>
+        
+        <div class="stat-card gradient-success">
+          <div class="stat-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="currentColor">
+              <path d="M16 2C8.268 2 2 8.268 2 16s6.268 14 14 14 14-6.268 14-14S23.732 2 16 2zm6.036 11.464l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L13 19.014l7.036-7.036a1 1 0 011.414 1.414z"/>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-number">{{ linkStore.links.length }}</div>
+            <div class="stat-label">总链接数</div>
+          </div>
+        </div>
+        
+        <div class="stat-card gradient-info">
+          <div class="stat-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="currentColor">
+              <path d="M16 2a14 14 0 100 28 14 14 0 000-28zm1 21h-2v-2h2v2zm0-4h-2v-8h2v8z"/>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-number">{{ recentAddedCount }}</div>
+            <div class="stat-label">今日新增</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 分类列表 -->
+      <div class="categories-container">
+        <!-- 加载状态 -->
+        <div v-if="categoryStore.loading" class="loading-state">
+          <div class="loading-spinner-large"></div>
+          <p>加载中...</p>
+        </div>
+
+        <!-- 分类卡片 -->
+        <div v-else-if="categoryStore.categories.length > 0" class="categories-grid">
+          <TransitionGroup name="list">
+            <div
+              v-for="category in categoryStore.categories"
+              :key="category.id"
+              class="category-item"
+              :class="{ expanded: expandedCategory === category.id }"
+            >
+              <!-- 分类头部 -->
+              <div class="category-header" @click="toggleCategory(category.id)">
+                <div class="category-info">
+                  <h3 class="category-title">{{ category.name }}</h3>
+                  <span class="category-meta">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A31.493 31.493 0 018 14.58a31.481 31.481 0 01-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0110 0c0 .862-.305 1.867-.834 2.94zM8 16s6-5.686 6-10A6 6 0 002 6c0 4.314 6 10 6 10z"/>
+                      <path d="M8 8a2 2 0 110-4 2 2 0 010 4zm0 1a3 3 0 100-6 3 3 0 000 6z"/>
+                    </svg>
+                    {{ getCategoryLinks(category.id).length }} 个链接
+                  </span>
                 </div>
-                <div v-if="getCategoryLinks(props.row.id).length > 0" class="links-list">
-                  <el-table :data="getCategoryLinks(props.row.id)" size="small">
-                    <el-table-column prop="title" label="标题" />
-                    <el-table-column prop="url" label="链接地址">
-                      <template #default="scope">
-                        <el-link :href="scope.row.url" target="_blank" type="primary">
-                          {{ scope.row.url }}
-                        </el-link>
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="description" label="描述" />
-                    <el-table-column label="操作" width="150" align="center">
-                      <template #default="scope">
-                        <el-button
-                          type="primary"
-                          size="small"
-                          text
-                          @click="handleEditLink(scope.row)"
-                        >
-                          编辑
-                        </el-button>
-                        <el-button
-                          type="danger"
-                          size="small"
-                          text
-                          @click="handleDeleteLink(scope.row)"
-                        >
-                          删除
-                        </el-button>
-                      </template>
-                    </el-table-column>
-                  </el-table>
-                </div>
-                <div v-else class="no-links">
-                  <el-empty description="暂无链接" :image-size="60" />
+                <div class="category-actions">
+                  <button
+                    @click.stop="handleEditCategory(category)"
+                    class="btn-icon"
+                    title="编辑分类"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M12.146.146a.5.5 0 01.708 0l3 3a.5.5 0 010 .708l-10 10a.5.5 0 01-.168.11l-5 2a.5.5 0 01-.65-.65l2-5a.5.5 0 01.11-.168l10-10zM11.207 2.5L13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 01.5.5v.5h.5a.5.5 0 01.5.5v.5h.293l6.5-6.5zm-9.761 5.175l-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 015 12.5V12h-.5a.5.5 0 01-.5-.5V11h-.5a.5.5 0 01-.468-.325z"/>
+                    </svg>
+                  </button>
+                  <button
+                    @click.stop="handleDeleteCategory(category)"
+                    class="btn-icon danger"
+                    title="删除分类"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M5.5 5.5A.5.5 0 016 6v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm2.5 0a.5.5 0 01.5.5v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm3 .5a.5.5 0 00-1 0v6a.5.5 0 001 0V6z"/>
+                      <path fill-rule="evenodd" d="M14.5 3a1 1 0 01-1 1H13v9a2 2 0 01-2 2H5a2 2 0 01-2-2V4h-.5a1 1 0 01-1-1V2a1 1 0 011-1H6a1 1 0 011-1h2a1 1 0 011 1h3.5a1 1 0 011 1v1zM4.118 4L4 4.059V13a1 1 0 001 1h6a1 1 0 001-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                    </svg>
+                  </button>
+                  <button
+                    class="btn-icon expand-icon"
+                    :class="{ rotated: expandedCategory === category.id }"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 01.708 0L8 10.293l5.646-5.647a.5.5 0 01.708.708l-6 6a.5.5 0 01-.708 0l-6-6a.5.5 0 010-.708z"/>
+                    </svg>
+                  </button>
                 </div>
               </div>
-            </template>
-          </el-table-column>
-          <el-table-column prop="name" label="分类名称" />
-          <el-table-column prop="order" label="排序" width="100" align="center" />
-          <el-table-column label="创建时间" width="180">
-            <template #default="scope">
-              {{ formatDate(scope.row.createdAt) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="200" align="center">
-            <template #default="scope">
-              <el-button
-                type="primary"
-                size="small"
-                @click="handleEdit(scope.row)"
-              >
-                编辑
-              </el-button>
-              <el-button
-                type="danger"
-                size="small"
-                @click="handleDelete(scope.row)"
-              >
-                删除
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
 
-        <!-- Reorder buttons -->
-        <div class="reorder-section">
-          <el-button @click="handleReorder" :disabled="!hasOrderChanges">
-            保存排序
-          </el-button>
-          <el-button @click="resetOrder" :disabled="!hasOrderChanges">
-            重置排序
-          </el-button>
+              <!-- 分类内容（展开时显示） -->
+              <div v-if="expandedCategory === category.id" class="category-content">
+                <!-- 添加链接按钮 -->
+                <div class="content-header">
+                  <h4>链接列表</h4>
+                  <button @click="handleAddLink(category)" class="btn-add-link">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M8 4a.5.5 0 01.5.5v3h3a.5.5 0 010 1h-3v3a.5.5 0 01-1 0v-3h-3a.5.5 0 010-1h3v-3A.5.5 0 018 4z"/>
+                    </svg>
+                    添加链接
+                  </button>
+                </div>
+
+                <!-- 链接列表 -->
+                <div v-if="getCategoryLinks(category.id).length > 0" class="links-list">
+                  <div
+                    v-for="link in getCategoryLinks(category.id)"
+                    :key="link.id"
+                    class="link-card"
+                  >
+                    <div class="link-icon">
+                      <img 
+                        v-if="link.icon" 
+                        :src="link.icon" 
+                        :alt="link.title"
+                        @error="handleIconError($event, link.title)"
+                      />
+                      <span v-else class="icon-placeholder">
+                        {{ link.title.charAt(0).toUpperCase() }}
+                      </span>
+                    </div>
+                    <div class="link-info">
+                      <a :href="link.url" target="_blank" class="link-title">
+                        {{ link.title }}
+                      </a>
+                      <div class="link-url">{{ formatUrl(link.url) }}</div>
+                      <div v-if="link.description" class="link-description">
+                        {{ link.description }}
+                      </div>
+                    </div>
+                    <div class="link-actions">
+                      <button
+                        @click="handleEditLink(link)"
+                        class="btn-icon small"
+                        title="编辑"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+                          <path d="M10.646.146a.5.5 0 01.708 0l2.5 2.5a.5.5 0 010 .708l-8 8a.5.5 0 01-.168.11l-3 1a.5.5 0 01-.65-.65l1-3a.5.5 0 01.11-.168l8-8zM11.207 2L2 11.207V11.5h.293a.5.5 0 01.5.5v.293L12 3.207 11.207 2z"/>
+                        </svg>
+                      </button>
+                      <button
+                        @click="handleDeleteLink(link)"
+                        class="btn-icon small danger"
+                        title="删除"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+                          <path d="M4.646 4.646a.5.5 0 01.708 0L7 6.293l1.646-1.647a.5.5 0 01.708.708L7.707 7l1.647 1.646a.5.5 0 01-.708.708L7 7.707 5.354 9.354a.5.5 0 01-.708-.708L6.293 7 4.646 5.354a.5.5 0 010-.708z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 空状态 -->
+                <div v-else class="empty-links">
+                  <svg width="48" height="48" viewBox="0 0 48 48" fill="currentColor" opacity="0.1">
+                    <path d="M38 8H10c-1.1 0-2 .9-2 2v28c0 1.1.9 2 2 2h28c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM24 12c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 24c-5.52 0-10-4.48-10-10s4.48-10 10-10 10 4.48 10 10-4.48 10-10 10z"/>
+                  </svg>
+                  <p>该分类下暂无链接</p>
+                  <button @click="handleAddLink(category)" class="btn-text">
+                    添加第一个链接
+                  </button>
+                </div>
+              </div>
+            </div>
+          </TransitionGroup>
+        </div>
+
+        <!-- 空状态 -->
+        <div v-else class="empty-state">
+          <div class="empty-illustration">
+            <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+              <circle cx="60" cy="60" r="50" stroke="currentColor" stroke-width="2" opacity="0.1"/>
+              <rect x="35" y="35" width="20" height="20" rx="4" fill="currentColor" opacity="0.2"/>
+              <rect x="65" y="35" width="20" height="20" rx="4" fill="currentColor" opacity="0.2"/>
+              <rect x="35" y="65" width="20" height="20" rx="4" fill="currentColor" opacity="0.2"/>
+              <rect x="65" y="65" width="20" height="20" rx="4" fill="currentColor" opacity="0.2"/>
+              <path d="M60 50v20M50 60h20" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+            </svg>
+          </div>
+          <h3>开始创建您的第一个分类</h3>
+          <p>分类可以帮助您更好地组织和管理导航链接</p>
+          <button @click="showAddCategoryDialog = true" class="btn-primary">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/>
+            </svg>
+            创建分类
+          </button>
         </div>
       </div>
 
-      <!-- Empty state -->
-      <div v-else class="empty-state">
-        <el-empty description="暂无分类">
-          <el-button type="primary" @click="showAddDialog = true">
-            创建第一个分类
-          </el-button>
-        </el-empty>
-      </div>
-    </el-card>
+      <!-- 添加/编辑分类对话框 -->
+      <Teleport to="body">
+        <div v-if="showAddCategoryDialog" class="dialog-overlay" @click.self="closeCategoryDialog">
+          <div class="dialog">
+            <div class="dialog-header">
+              <h3>{{ editingCategory ? '编辑分类' : '新建分类' }}</h3>
+              <button @click="closeCategoryDialog" class="dialog-close">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/>
+                </svg>
+              </button>
+            </div>
+            
+            <form @submit.prevent="handleSaveCategory" class="dialog-body">
+              <div class="form-group">
+                <label class="form-label">分类名称</label>
+                <input
+                  v-model="categoryForm.name"
+                  type="text"
+                  class="form-input"
+                  placeholder="输入分类名称"
+                  required
+                  maxlength="50"
+                />
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">排序值</label>
+                <input
+                  v-model.number="categoryForm.order"
+                  type="number"
+                  class="form-input"
+                  placeholder="输入排序值（数字越小越靠前）"
+                  min="0"
+                  max="9999"
+                />
+                <span class="form-hint">数字越小，显示越靠前</span>
+              </div>
+            </form>
+            
+            <div class="dialog-footer">
+              <button @click="closeCategoryDialog" class="btn-secondary">
+                取消
+              </button>
+              <button @click="handleSaveCategory" class="btn-primary" :disabled="submitting">
+                {{ submitting ? '保存中...' : '保存' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Teleport>
 
-    <!-- Add/Edit Dialog -->
-    <el-dialog
-      v-model="showAddDialog"
-      :title="editingCategory ? '编辑分类' : '添加分类'"
-      width="400px"
-    >
-      <el-form
-        ref="categoryFormRef"
-        :model="categoryForm"
-        :rules="formRules"
-        label-width="80px"
-      >
-        <el-form-item label="分类名称" prop="name">
-          <el-input
-            v-model="categoryForm.name"
-            placeholder="请输入分类名称"
-            maxlength="50"
-            show-word-limit
-          />
-        </el-form-item>
-        <el-form-item label="排序" prop="order">
-          <el-input-number
-            v-model="categoryForm.order"
-            :min="0"
-            :max="9999"
-            controls-position="right"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="handleCloseDialog">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitting">
-          确定
-        </el-button>
-      </template>
-    </el-dialog>
-
-    <!-- Add/Edit Link Dialog -->
-    <el-dialog
-      v-model="showLinkDialog"
-      :title="editingLink ? '编辑链接' : '添加链接'"
-      width="500px"
-    >
-      <el-form
-        ref="linkFormRef"
-        :model="linkForm"
-        :rules="linkFormRules"
-        label-width="80px"
-      >
-        <el-form-item label="标题" prop="title">
-          <el-input
-            v-model="linkForm.title"
-            placeholder="请输入链接标题"
-            maxlength="100"
-            show-word-limit
-          />
-        </el-form-item>
-        <el-form-item label="链接地址" prop="url">
-          <el-input
-            v-model="linkForm.url"
-            placeholder="请输入链接地址，如: https://example.com"
-            maxlength="500"
-          />
-        </el-form-item>
-        <el-form-item label="描述" prop="description">
-          <el-input
-            v-model="linkForm.description"
-            type="textarea"
-            placeholder="请输入链接描述（选填）"
-            maxlength="500"
-            :rows="3"
-            show-word-limit
-          />
-        </el-form-item>
-        <el-form-item label="图标" prop="icon">
-          <el-input
-            v-model="linkForm.icon"
-            placeholder="图标URL或Base64（选填）"
-            maxlength="1000"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="handleCloseLinkDialog">取消</el-button>
-        <el-button type="primary" @click="handleSubmitLink" :loading="linkSubmitting">
-          确定
-        </el-button>
-      </template>
-    </el-dialog>
-  </div>
+      <!-- 添加/编辑链接对话框 -->
+      <Teleport to="body">
+        <div v-if="showAddLinkDialog" class="dialog-overlay" @click.self="closeLinkDialog">
+          <div class="dialog">
+            <div class="dialog-header">
+              <h3>{{ editingLink ? '编辑链接' : '添加链接' }}</h3>
+              <button @click="closeLinkDialog" class="dialog-close">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/>
+                </svg>
+              </button>
+            </div>
+            
+            <form @submit.prevent="handleSaveLink" class="dialog-body">
+              <div class="form-group">
+                <label class="form-label">链接标题</label>
+                <input
+                  v-model="linkForm.title"
+                  type="text"
+                  class="form-input"
+                  placeholder="输入链接标题"
+                  required
+                  maxlength="100"
+                />
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">链接地址</label>
+                <input
+                  v-model="linkForm.url"
+                  type="url"
+                  class="form-input"
+                  placeholder="https://example.com"
+                  required
+                  maxlength="500"
+                />
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">描述（选填）</label>
+                <textarea
+                  v-model="linkForm.description"
+                  class="form-textarea"
+                  placeholder="输入链接描述"
+                  rows="3"
+                  maxlength="500"
+                ></textarea>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">图标URL（选填）</label>
+                <input
+                  v-model="linkForm.icon"
+                  type="text"
+                  class="form-input"
+                  placeholder="图标URL或Base64"
+                  maxlength="1000"
+                />
+                <span class="form-hint">可以是图标URL或Base64编码的图片</span>
+              </div>
+            </form>
+            
+            <div class="dialog-footer">
+              <button @click="closeLinkDialog" class="btn-secondary">
+                取消
+              </button>
+              <button @click="handleSaveLink" class="btn-primary" :disabled="linkSubmitting">
+                {{ linkSubmitting ? '保存中...' : '保存' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Teleport>
+    </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
 import { useCategoryStore, type Category } from '../stores/categoryStore'
 import { useLinkStore, type Link } from '../stores/linkStore'
-import type { FormInstance, FormRules } from 'element-plus'
+import MainLayout from '../layouts/MainLayout.vue'
 
 // Store
 const categoryStore = useCategoryStore()
 const linkStore = useLinkStore()
 
-// Dialog state
-const showAddDialog = ref(false)
+// 状态
+const expandedCategory = ref<number | null>(null)
+const showAddCategoryDialog = ref(false)
+const showAddLinkDialog = ref(false)
 const editingCategory = ref<Category | null>(null)
+const editingLink = ref<Link | null>(null)
+const currentCategoryId = ref<number | null>(null)
 const submitting = ref(false)
-const hasOrderChanges = ref(false)
-const originalOrder = ref<number[]>([])
+const linkSubmitting = ref(false)
 
-// Form
-const categoryFormRef = ref<FormInstance>()
+// 表单数据
 const categoryForm = ref({
   name: '',
   order: 0
 })
 
-// Link Dialog state
-const showLinkDialog = ref(false)
-const editingLink = ref<Link | null>(null)
-const linkSubmitting = ref(false)
-const currentCategoryId = ref<number | null>(null)
-
-// Link Form
-const linkFormRef = ref<FormInstance>()
 const linkForm = ref({
   title: '',
   url: '',
@@ -253,60 +382,62 @@ const linkForm = ref({
   icon: ''
 })
 
-// Link Form validation rules
-const linkFormRules: FormRules = {
-  title: [
-    { required: true, message: '请输入链接标题', trigger: 'blur' },
-    { min: 1, max: 100, message: '标题长度在 1 到 100 个字符', trigger: 'blur' }
-  ],
-  url: [
-    { required: true, message: '请输入链接地址', trigger: 'blur' },
-    { type: 'url', message: '请输入有效的URL地址', trigger: 'blur' }
-  ]
+// 计算属性
+const recentAddedCount = computed(() => {
+  // 模拟今日新增数据
+  return Math.floor(Math.random() * 5) + 1
+})
+
+// 获取分类下的链接
+const getCategoryLinks = (categoryId: number) => {
+  return linkStore.getLinksByCategory(categoryId)
 }
 
-// Form validation rules
-const formRules: FormRules = {
-  name: [
-    { required: true, message: '请输入分类名称', trigger: 'blur' },
-    { min: 1, max: 50, message: '分类名称长度在 1 到 50 个字符', trigger: 'blur' }
-  ],
-  order: [
-    { required: true, message: '请设置排序', trigger: 'blur' },
-    { type: 'number', min: 0, max: 9999, message: '排序值在 0 到 9999 之间', trigger: 'blur' }
-  ]
+// 切换分类展开/折叠
+const toggleCategory = (categoryId: number) => {
+  expandedCategory.value = expandedCategory.value === categoryId ? null : categoryId
 }
 
-// Format date
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+// 格式化URL
+const formatUrl = (url: string) => {
+  try {
+    const urlObj = new URL(url)
+    return urlObj.hostname.replace('www.', '')
+  } catch {
+    return url
+  }
 }
 
-// Handle edit
-const handleEdit = (category: Category) => {
+// 处理图标加载错误
+const handleIconError = (event: Event, title: string) => {
+  const img = event.target as HTMLImageElement
+  img.style.display = 'none'
+  const parent = img.parentElement
+  if (parent) {
+    const span = document.createElement('span')
+    span.className = 'icon-placeholder'
+    span.textContent = title.charAt(0).toUpperCase()
+    parent.appendChild(span)
+  }
+}
+
+// 分类相关操作
+const handleEditCategory = (category: Category) => {
   editingCategory.value = category
   categoryForm.value = {
     name: category.name,
     order: category.order
   }
-  showAddDialog.value = true
+  showAddCategoryDialog.value = true
 }
 
-// Handle delete
-const handleDelete = async (category: Category) => {
+const handleDeleteCategory = async (category: Category) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除分类"${category.name}"吗？删除后该分类下的所有链接将失去分类。`,
+      `确定要删除分类"${category.name}"吗？删除后该分类下的所有链接也将被删除。`,
       '删除确认',
       {
-        confirmButtonText: '确定',
+        confirmButtonText: '确定删除',
         cancelButtonText: '取消',
         type: 'warning'
       }
@@ -321,85 +452,47 @@ const handleDelete = async (category: Category) => {
   }
 }
 
-// Handle close dialog
-const handleCloseDialog = () => {
-  showAddDialog.value = false
+const handleSaveCategory = async () => {
+  if (!categoryForm.value.name.trim()) {
+    ElMessage.warning('请输入分类名称')
+    return
+  }
+
+  submitting.value = true
+  try {
+    if (editingCategory.value) {
+      // 更新分类
+      await categoryStore.updateCategory(editingCategory.value.id, {
+        name: categoryForm.value.name,
+        order: categoryForm.value.order
+      })
+      ElMessage.success('分类更新成功')
+    } else {
+      // 创建分类
+      await categoryStore.createCategory({
+        name: categoryForm.value.name,
+        order: categoryForm.value.order
+      })
+      ElMessage.success('分类创建成功')
+    }
+    closeCategoryDialog()
+  } catch (error: any) {
+    ElMessage.error(error.response?.data?.message || '操作失败')
+  } finally {
+    submitting.value = false
+  }
+}
+
+const closeCategoryDialog = () => {
+  showAddCategoryDialog.value = false
   editingCategory.value = null
   categoryForm.value = {
     name: '',
     order: categoryStore.categories.length
   }
-  categoryFormRef.value?.resetFields()
 }
 
-// Handle submit
-const handleSubmit = async () => {
-  if (!categoryFormRef.value) return
-
-  await categoryFormRef.value.validate(async (valid) => {
-    if (!valid) return
-
-    submitting.value = true
-    try {
-      if (editingCategory.value) {
-        // Update category
-        await categoryStore.updateCategory(editingCategory.value.id, {
-          name: categoryForm.value.name,
-          order: categoryForm.value.order
-        })
-        ElMessage.success('分类更新成功')
-      } else {
-        // Create category
-        await categoryStore.createCategory({
-          name: categoryForm.value.name,
-          order: categoryForm.value.order
-        })
-        ElMessage.success('分类创建成功')
-      }
-      handleCloseDialog()
-    } catch (error: any) {
-      ElMessage.error(error.response?.data?.message || '操作失败')
-    } finally {
-      submitting.value = false
-    }
-  })
-}
-
-// Handle reorder
-const handleReorder = async () => {
-  try {
-    const reorderData = {
-      categories: categoryStore.categories.map((cat, index) => ({
-        id: cat.id,
-        order: index
-      }))
-    }
-    await categoryStore.reorderCategories(reorderData)
-    ElMessage.success('排序保存成功')
-    hasOrderChanges.value = false
-    originalOrder.value = categoryStore.categories.map(cat => cat.id)
-  } catch (error: any) {
-    ElMessage.error(error.response?.data?.message || '保存排序失败')
-  }
-}
-
-// Reset order
-const resetOrder = () => {
-  // Reset to original order
-  categoryStore.categories.sort((a, b) => {
-    const indexA = originalOrder.value.indexOf(a.id)
-    const indexB = originalOrder.value.indexOf(b.id)
-    return indexA - indexB
-  })
-  hasOrderChanges.value = false
-}
-
-// Get links for a category
-const getCategoryLinks = (categoryId: number) => {
-  return linkStore.getLinksByCategory(categoryId)
-}
-
-// Handle add link
+// 链接相关操作
 const handleAddLink = (category: Category) => {
   currentCategoryId.value = category.id
   linkForm.value = {
@@ -408,10 +501,9 @@ const handleAddLink = (category: Category) => {
     description: '',
     icon: ''
   }
-  showLinkDialog.value = true
+  showAddLinkDialog.value = true
 }
 
-// Handle edit link
 const handleEditLink = (link: Link) => {
   editingLink.value = link
   currentCategoryId.value = link.categoryId
@@ -421,17 +513,16 @@ const handleEditLink = (link: Link) => {
     description: link.description || '',
     icon: link.icon || ''
   }
-  showLinkDialog.value = true
+  showAddLinkDialog.value = true
 }
 
-// Handle delete link
 const handleDeleteLink = async (link: Link) => {
   try {
     await ElMessageBox.confirm(
       `确定要删除链接"${link.title}"吗？`,
       '删除确认',
       {
-        confirmButtonText: '确定',
+        confirmButtonText: '确定删除',
         cancelButtonText: '取消',
         type: 'warning'
       }
@@ -446,9 +537,48 @@ const handleDeleteLink = async (link: Link) => {
   }
 }
 
-// Handle close link dialog
-const handleCloseLinkDialog = () => {
-  showLinkDialog.value = false
+const handleSaveLink = async () => {
+  if (!linkForm.value.title.trim() || !linkForm.value.url.trim()) {
+    ElMessage.warning('请填写必填字段')
+    return
+  }
+
+  linkSubmitting.value = true
+  try {
+    if (editingLink.value) {
+      // 更新链接
+      await linkStore.updateLink(editingLink.value.id, {
+        title: linkForm.value.title,
+        url: linkForm.value.url,
+        description: linkForm.value.description || undefined,
+        icon: linkForm.value.icon || undefined
+      })
+      ElMessage.success('链接更新成功')
+    } else {
+      // 创建链接
+      if (!currentCategoryId.value) {
+        ElMessage.error('请选择分类')
+        return
+      }
+      await linkStore.createLink({
+        categoryId: currentCategoryId.value,
+        title: linkForm.value.title,
+        url: linkForm.value.url,
+        description: linkForm.value.description || undefined,
+        icon: linkForm.value.icon || undefined
+      })
+      ElMessage.success('链接创建成功')
+    }
+    closeLinkDialog()
+  } catch (error: any) {
+    ElMessage.error(error.response?.data?.message || '操作失败')
+  } finally {
+    linkSubmitting.value = false
+  }
+}
+
+const closeLinkDialog = () => {
+  showAddLinkDialog.value = false
   editingLink.value = null
   currentCategoryId.value = null
   linkForm.value = {
@@ -457,130 +587,685 @@ const handleCloseLinkDialog = () => {
     description: '',
     icon: ''
   }
-  linkFormRef.value?.resetFields()
 }
 
-// Handle submit link
-const handleSubmitLink = async () => {
-  if (!linkFormRef.value) return
-
-  await linkFormRef.value.validate(async (valid) => {
-    if (!valid) return
-
-    linkSubmitting.value = true
-    try {
-      if (editingLink.value) {
-        // Update link
-        await linkStore.updateLink(editingLink.value.id, {
-          title: linkForm.value.title,
-          url: linkForm.value.url,
-          description: linkForm.value.description || undefined,
-          icon: linkForm.value.icon || undefined
-        })
-        ElMessage.success('链接更新成功')
-      } else {
-        // Create link
-        if (!currentCategoryId.value) {
-          ElMessage.error('请选择分类')
-          return
-        }
-        await linkStore.createLink({
-          categoryId: currentCategoryId.value,
-          title: linkForm.value.title,
-          url: linkForm.value.url,
-          description: linkForm.value.description || undefined,
-          icon: linkForm.value.icon || undefined
-        })
-        ElMessage.success('链接创建成功')
-      }
-      handleCloseLinkDialog()
-    } catch (error: any) {
-      ElMessage.error(error.response?.data?.message || '操作失败')
-    } finally {
-      linkSubmitting.value = false
-    }
-  })
-}
-
-// Initialize
+// 初始化
 onMounted(async () => {
   try {
-    await categoryStore.fetchCategories()
-    await linkStore.fetchLinks()
-    originalOrder.value = categoryStore.categories.map(cat => cat.id)
-    // Set default order for new category
+    await Promise.all([
+      categoryStore.fetchCategories(),
+      linkStore.fetchLinks()
+    ])
+    // 设置默认排序值
     categoryForm.value.order = categoryStore.categories.length
   } catch (error: any) {
-    ElMessage.error('获取分类列表失败')
+    ElMessage.error('获取数据失败')
   }
 })
 </script>
 
 <style scoped>
-.category-manage {
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+@import '../styles/global.css';
+
+.category-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 
-.card-header {
+/* 页面头部 */
+.page-header {
+  background: white;
+  border-bottom: 1px solid var(--border-color);
+  padding: 24px 0;
+  margin-bottom: 32px;
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.card-header h2 {
+.header-title h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+}
+
+.header-title p {
+  font-size: 16px;
+  color: var(--text-secondary);
   margin: 0;
+}
+
+.btn-add-category {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.btn-add-category:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+}
+
+/* 统计卡片 */
+.stats-cards {
+  max-width: 1200px;
+  margin: 0 auto 32px;
+  padding: 0 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: var(--shadow-md);
+  transition: var(--transition-base);
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.stat-card.gradient-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.stat-card.gradient-success {
+  background: linear-gradient(135deg, #11cdef 0%, #2dce89 100%);
+  color: white;
+}
+
+.stat-card.gradient-info {
+  background: linear-gradient(135deg, #f5365c 0%, #fb6340 100%);
+  color: white;
+}
+
+.stat-icon {
+  width: 64px;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-info {
+  flex: 1;
+}
+
+.stat-number {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 14px;
+  margin-top: 4px;
+  opacity: 0.9;
+}
+
+/* 分类容器 */
+.categories-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+}
+
+.categories-grid {
+  display: grid;
+  gap: 20px;
+}
+
+.category-item {
+  background: white;
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  transition: var(--transition-base);
+}
+
+.category-item:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.category-item.expanded {
+  box-shadow: var(--shadow-xl);
+}
+
+/* 分类头部 */
+.category-header {
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.category-header:hover {
+  background: var(--bg-color);
+}
+
+.category-info {
+  flex: 1;
+}
+
+.category-title {
   font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px;
 }
 
-.loading-container {
-  padding: 20px;
+.category-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-secondary);
 }
 
-.categories-list {
-  min-height: 400px;
+.category-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  background: var(--bg-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.btn-icon:hover {
+  background: var(--primary-bg);
+  color: var(--primary-color);
+}
+
+.btn-icon.danger:hover {
+  background: rgba(245, 54, 92, 0.1);
+  color: var(--danger-color);
+}
+
+.btn-icon.small {
+  width: 28px;
+  height: 28px;
+}
+
+.expand-icon {
+  transition: transform 0.3s ease;
+}
+
+.expand-icon.rotated {
+  transform: rotate(180deg);
+}
+
+/* 分类内容 */
+.category-content {
+  padding: 0 24px 24px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 1000px;
+  }
+}
+
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.content-header h4 {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.btn-add-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--primary-bg);
+  color: var(--primary-color);
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.btn-add-link:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+/* 链接列表 */
+.links-list {
+  display: grid;
+  gap: 12px;
+}
+
+.link-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--bg-color);
+  border-radius: 12px;
+  transition: var(--transition-base);
+}
+
+.link-card:hover {
+  background: white;
+  box-shadow: var(--shadow-sm);
+  transform: translateX(4px);
+}
+
+.link-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.link-icon img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.icon-placeholder {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.link-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.link-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-decoration: none;
+  display: block;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.link-title:hover {
+  color: var(--primary-color);
+}
+
+.link-url {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.link-description {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.link-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* 空状态 */
+.empty-links {
+  text-align: center;
+  padding: 40px;
+  background: var(--bg-color);
+  border-radius: 12px;
+}
+
+.empty-links p {
+  margin: 16px 0;
+  color: var(--text-secondary);
+}
+
+.btn-text {
+  color: var(--primary-color);
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.btn-text:hover {
+  color: var(--primary-hover);
 }
 
 .empty-state {
-  padding: 40px;
   text-align: center;
+  padding: 100px 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
 }
 
-.reorder-section {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #ebeef5;
-  text-align: right;
+.empty-illustration {
+  margin-bottom: 32px;
+  color: var(--primary-color);
 }
 
-.links-section {
-  padding: 20px;
+.empty-state h3 {
+  font-size: 24px;
+  color: var(--text-primary);
+  margin: 0 0 12px;
 }
 
-.links-header {
+.empty-state p {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin: 0 0 32px;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* 加载状态 */
+.loading-state {
+  text-align: center;
+  padding: 100px 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+}
+
+.loading-spinner-large {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+  border: 4px solid rgba(94, 114, 228, 0.2);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 对话框 */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.dialog {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dialog-header {
+  padding: 24px 24px 20px;
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
 }
 
-.links-header h4 {
+.dialog-header h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
   margin: 0;
-  font-size: 16px;
-  color: #333;
 }
 
-.links-list {
-  background: #f5f7fa;
-  padding: 10px;
-  border-radius: 4px;
+.dialog-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: var(--bg-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-base);
 }
 
-.no-links {
-  padding: 20px;
-  text-align: center;
-  background: #f5f7fa;
-  border-radius: 4px;
+.dialog-close:hover {
+  background: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dialog-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 15px;
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  background: white;
+  color: var(--text-primary);
+  transition: var(--transition-base);
+  font-family: inherit;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.dialog-footer {
+  padding: 20px 24px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.btn-secondary {
+  padding: 10px 20px;
+  background: var(--bg-color);
+  color: var(--text-primary);
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.btn-secondary:hover {
+  background: var(--border-color);
+}
+
+/* 列表动画 */
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.3s ease;
+}
+
+.list-enter-from {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.list-leave-to {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  
+  .stats-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .dialog {
+    width: 95%;
+    margin: 20px;
+  }
+  
+  .link-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .link-actions {
+    width: 100%;
+    justify-content: center;
+  }
 }
 </style>
