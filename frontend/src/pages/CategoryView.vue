@@ -78,7 +78,14 @@
               <!-- 分类头部 -->
               <div class="category-header" @click="toggleCategory(category.id)">
                 <div class="category-info">
-                  <h3 class="category-title">{{ category.name }}</h3>
+                  <h3 class="category-title">
+                    {{ category.name }}
+                    <span v-if="category.isPublic" class="public-badge" title="公开分类">
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+                      </svg>
+                    </span>
+                  </h3>
                   <span class="category-meta">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                       <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A31.493 31.493 0 018 14.58a31.481 31.481 0 01-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0110 0c0 .862-.305 1.867-.834 2.94zM8 16s6-5.686 6-10A6 6 0 002 6c0 4.314 6 10 6 10z"/>
@@ -165,6 +172,11 @@
                         <div class="link-info">
                           <a :href="link.url" target="_blank" class="link-title">
                             {{ link.title }}
+                            <span v-if="link.isPublic" class="public-badge small" title="公开链接">
+                              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+                              </svg>
+                            </span>
                           </a>
                           <div class="link-url">{{ formatUrl(link.url) }}</div>
                           <div v-if="link.description" class="link-description">
@@ -272,6 +284,18 @@
                 />
                 <span class="form-hint">数字越小，显示越靠前</span>
               </div>
+              
+              <div class="form-group">
+                <label class="form-label">
+                  <input
+                    v-model="categoryForm.isPublic"
+                    type="checkbox"
+                    style="margin-right: 8px;"
+                  />
+                  设为公开分类
+                </label>
+                <span class="form-hint">公开分类可以被其他用户查看</span>
+              </div>
             </form>
             
             <div class="dialog-footer">
@@ -346,6 +370,18 @@
                 />
                 <span class="form-hint">可以是图标URL或Base64编码的图片</span>
               </div>
+              
+              <div class="form-group">
+                <label class="form-label">
+                  <input
+                    v-model="linkForm.isPublic"
+                    type="checkbox"
+                    style="margin-right: 8px;"
+                  />
+                  设为公开链接
+                </label>
+                <span class="form-hint">公开链接可以被其他用户查看（需要分类也是公开的）</span>
+              </div>
             </form>
             
             <div class="dialog-footer">
@@ -389,14 +425,16 @@ const categoryLinksMap = ref<Record<number, Link[]>>({})
 // 表单数据
 const categoryForm = ref({
   name: '',
-  order: 0
+  order: 0,
+  isPublic: false
 })
 
 const linkForm = ref({
   title: '',
   url: '',
   description: '',
-  icon: ''
+  icon: '',
+  isPublic: false
 })
 
 // 计算属性
@@ -478,7 +516,8 @@ const handleEditCategory = (category: Category) => {
   editingCategory.value = category
   categoryForm.value = {
     name: category.name,
-    order: category.order
+    order: category.order,
+    isPublic: category.isPublic || false
   }
   showAddCategoryDialog.value = true
 }
@@ -516,14 +555,16 @@ const handleSaveCategory = async () => {
       // 更新分类
       await categoryStore.updateCategory(editingCategory.value.id, {
         name: categoryForm.value.name,
-        order: categoryForm.value.order
+        order: categoryForm.value.order,
+        isPublic: categoryForm.value.isPublic
       })
       ElMessage.success('分类更新成功')
     } else {
       // 创建分类
       await categoryStore.createCategory({
         name: categoryForm.value.name,
-        order: categoryForm.value.order
+        order: categoryForm.value.order,
+        isPublic: categoryForm.value.isPublic
       })
       ElMessage.success('分类创建成功')
     }
@@ -540,7 +581,8 @@ const closeCategoryDialog = () => {
   editingCategory.value = null
   categoryForm.value = {
     name: '',
-    order: categoryStore.categories.length
+    order: categoryStore.categories.length,
+    isPublic: false
   }
 }
 
@@ -551,7 +593,8 @@ const handleAddLink = (category: Category) => {
     title: '',
     url: '',
     description: '',
-    icon: ''
+    icon: '',
+    isPublic: false
   }
   showAddLinkDialog.value = true
 }
@@ -563,7 +606,8 @@ const handleEditLink = (link: Link) => {
     title: link.title,
     url: link.url,
     description: link.description || '',
-    icon: link.icon || ''
+    icon: link.icon || '',
+    isPublic: link.isPublic || false
   }
   showAddLinkDialog.value = true
 }
@@ -603,7 +647,8 @@ const handleSaveLink = async () => {
         title: linkForm.value.title,
         url: linkForm.value.url,
         description: linkForm.value.description || undefined,
-        icon: linkForm.value.icon || undefined
+        icon: linkForm.value.icon || undefined,
+        isPublic: linkForm.value.isPublic
       })
       ElMessage.success('链接更新成功')
     } else {
@@ -617,7 +662,8 @@ const handleSaveLink = async () => {
         title: linkForm.value.title,
         url: linkForm.value.url,
         description: linkForm.value.description || undefined,
-        icon: linkForm.value.icon || undefined
+        icon: linkForm.value.icon || undefined,
+        isPublic: linkForm.value.isPublic
       })
       ElMessage.success('链接创建成功')
     }
@@ -637,7 +683,8 @@ const closeLinkDialog = () => {
     title: '',
     url: '',
     description: '',
-    icon: ''
+    icon: '',
+    isPublic: false
   }
 }
 
@@ -1312,6 +1359,33 @@ onMounted(async () => {
 
 .btn-secondary:hover {
   background: var(--border-color);
+}
+
+/* 公开标记样式 */
+.public-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: var(--primary-bg);
+  color: var(--primary-color);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: normal;
+  margin-left: 8px;
+}
+
+.public-badge.small {
+  padding: 1px 6px;
+  margin-left: 4px;
+}
+
+.public-badge svg {
+  opacity: 0.8;
+}
+
+.category-title {
+  display: flex;
+  align-items: center;
 }
 
 /* 列表动画 */

@@ -73,7 +73,7 @@ const getRandomDefaultIcon = () => {
 export const createLink = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    const { categoryId, title, url, description, icon } = req.body;
+    const { categoryId, title, url, description, icon, isPublic } = req.body;
     
     // Validate required fields
     if (!categoryId || !title || !url) {
@@ -116,7 +116,8 @@ export const createLink = async (req: Request, res: Response) => {
       url,
       description,
       icon: finalIcon,
-      order: newOrder
+      order: newOrder,
+      isPublic: isPublic || false
     });
     
     // Return the created link with category info
@@ -140,7 +141,7 @@ export const updateLink = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
     const { id } = req.params;
-    const { title, url, description, icon, categoryId, order } = req.body;
+    const { title, url, description, icon, categoryId, order, isPublic } = req.body;
     
     // Find the link and verify ownership
     const link = await Link.findOne({
@@ -175,7 +176,8 @@ export const updateLink = async (req: Request, res: Response) => {
       description: description !== undefined ? description : link.description,
       icon: icon !== undefined ? icon : link.icon,
       categoryId: categoryId !== undefined ? categoryId : link.categoryId,
-      order: order !== undefined ? order : link.order
+      order: order !== undefined ? order : link.order,
+      isPublic: isPublic !== undefined ? isPublic : link.isPublic
     });
     
     // Return updated link with category info
@@ -265,5 +267,82 @@ export const reorderLinks = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error reordering links:', error);
     res.status(500).json({ message: 'Failed to reorder links' });
+  }
+};
+
+// Get public links for a specific user (no authentication required)
+export const getPublicLinks = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    
+    if (!userId) {
+      return res.status(400).json({
+        message: '用户ID不能为空',
+      });
+    }
+    
+    const links = await Link.findAll({
+      where: {
+        userId: parseInt(userId),
+        isPublic: true,
+      },
+      include: [{
+        model: Category,
+        as: 'category',
+        attributes: ['id', 'name', 'isPublic']
+      }],
+      order: [['categoryId', 'ASC'], ['order', 'ASC'], ['createdAt', 'ASC']]
+    });
+    
+    // 只返回属于公开分类的链接
+    const publicLinks = links.filter(link => {
+      const category = (link as any).category;
+      return category && category.isPublic;
+    });
+    
+    res.json(publicLinks);
+  } catch (error) {
+    console.error('Error fetching public links:', error);
+    res.status(500).json({ message: '获取公开链接失败' });
+  }
+};
+
+// Get public links by category (no authentication required)
+export const getPublicLinksByCategory = async (req: Request, res: Response) => {
+  try {
+    const { userId, categoryId } = req.params;
+    
+    if (!userId || !categoryId) {
+      return res.status(400).json({
+        message: '用户ID和分类ID不能为空',
+      });
+    }
+    
+    // 验证分类是公开的
+    const category = await Category.findOne({
+      where: {
+        id: parseInt(categoryId),
+        userId: parseInt(userId),
+        isPublic: true
+      }
+    });
+    
+    if (!category) {
+      return res.status(404).json({ message: '分类不存在或不是公开的' });
+    }
+    
+    const links = await Link.findAll({
+      where: {
+        userId: parseInt(userId),
+        categoryId: parseInt(categoryId),
+        isPublic: true
+      },
+      order: [['order', 'ASC'], ['createdAt', 'ASC']]
+    });
+    
+    res.json(links);
+  } catch (error) {
+    console.error('Error fetching public links by category:', error);
+    res.status(500).json({ message: '获取公开链接失败' });
   }
 };

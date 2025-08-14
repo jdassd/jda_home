@@ -294,28 +294,39 @@ const validateForm = () => {
     errors[key as keyof typeof errors] = ''
   })
   
-  // 验证邮箱
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(form.email)) {
-    errors.email = '请输入有效的邮箱地址'
+  // 基本的邮箱格式验证（前端只做基础检查）
+  if (!form.email) {
+    errors.email = '请输入邮箱地址'
+    isValid = false
+  } else if (!form.email.includes('@')) {
+    errors.email = '邮箱格式不正确'
     isValid = false
   }
   
   // 验证密码
-  if (form.password.length < 6) {
+  if (!form.password) {
+    errors.password = '请输入密码'
+    isValid = false
+  } else if (form.password.length < 6) {
     errors.password = '密码长度至少为6个字符'
     isValid = false
   }
   
   if (isRegister.value) {
     // 验证用户名
-    if (form.username.length < 3 || form.username.length > 20) {
+    if (!form.username) {
+      errors.username = '请输入用户名'
+      isValid = false
+    } else if (form.username.length < 3 || form.username.length > 20) {
       errors.username = '用户名长度应在3-20个字符之间'
       isValid = false
     }
     
     // 验证确认密码
-    if (form.password !== form.confirmPassword) {
+    if (!form.confirmPassword) {
+      errors.confirmPassword = '请确认密码'
+      isValid = false
+    } else if (form.password !== form.confirmPassword) {
       errors.confirmPassword = '两次输入的密码不一致'
       isValid = false
     }
@@ -379,7 +390,44 @@ const handleSubmit = async () => {
       }, 1000)
     }
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.message || '操作失败，请重试')
+    const errorData = error.response?.data
+    
+    // 处理后端返回的验证错误
+    if (errorData?.errors && Array.isArray(errorData.errors)) {
+      // 清空所有错误信息
+      Object.keys(errors).forEach(key => {
+        errors[key as keyof typeof errors] = ''
+      })
+      
+      // 设置每个字段的错误信息
+      errorData.errors.forEach((err: any) => {
+        if (err.field && errors.hasOwnProperty(err.field)) {
+          errors[err.field as keyof typeof errors] = err.message
+        }
+      })
+      
+      // 显示主要错误消息
+      ElMessage.error({
+        message: errorData.message || '请检查输入信息',
+        duration: 5000,
+        showClose: true
+      })
+    } else if (errorData?.field && errors.hasOwnProperty(errorData.field)) {
+      // 处理单个字段错误（如唯一性约束）
+      errors[errorData.field as keyof typeof errors] = errorData.message
+      ElMessage.error({
+        message: errorData.message || '操作失败',
+        duration: 5000,
+        showClose: true
+      })
+    } else {
+      // 显示通用错误消息
+      ElMessage.error({
+        message: errorData?.message || '操作失败，请重试',
+        duration: 5000,
+        showClose: true
+      })
+    }
   } finally {
     submitting.value = false
   }

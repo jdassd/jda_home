@@ -8,6 +8,7 @@ export interface Category {
   userId: number
   name: string
   order: number
+  isPublic: boolean
   createdAt: string
   updatedAt: string
 }
@@ -16,12 +17,14 @@ export interface Category {
 export interface CreateCategoryInput {
   name: string
   order?: number
+  isPublic?: boolean
 }
 
 // Update category input
 export interface UpdateCategoryInput {
   name?: string
   order?: number
+  isPublic?: boolean
 }
 
 // Reorder categories input
@@ -138,6 +141,21 @@ export const useCategoryStore = defineStore('category', () => {
     return categories.value.find(cat => cat.id === id)
   }
 
+  // Fetch public categories for a specific user
+  const fetchPublicCategories = async (userId: number) => {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await api.get(`/categories/public/${userId}`)
+      return response.data.categories
+    } catch (err: any) {
+      error.value = err.response?.data?.message || '获取公开分类失败'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     // State
     categories,
@@ -151,6 +169,7 @@ export const useCategoryStore = defineStore('category', () => {
     deleteCategory,
     reorderCategories,
     clearCategories,
+    fetchPublicCategories,
     
     // Getters
     getCategoryById

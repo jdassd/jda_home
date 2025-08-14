@@ -6,6 +6,7 @@ export class Category extends Model {
   public userId!: number;
   public name!: string;
   public order!: number;
+  public isPublic!: boolean;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -36,6 +37,11 @@ export const initCategoryModel = (sequelize: Sequelize) => {
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,
+      },
+      isPublic: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
       },
     },
     {

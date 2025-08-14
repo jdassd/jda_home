@@ -10,6 +10,7 @@ export class Link extends Model {
   public description?: string;
   public icon?: string;
   public order!: number;
+  public isPublic!: boolean;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -61,6 +62,11 @@ export const initLinkModel = (sequelize: Sequelize) => {
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,
+      },
+      isPublic: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
       },
     },
     {

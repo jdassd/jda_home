@@ -28,7 +28,7 @@ export const getCategories = async (req: Request, res: Response) => {
 export const createCategory = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    const { name, order } = req.body;
+    const { name, order, isPublic } = req.body;
     
     // Validate input
     if (!name || name.trim() === '') {
@@ -66,6 +66,7 @@ export const createCategory = async (req: Request, res: Response) => {
       userId,
       name: name.trim(),
       order: categoryOrder,
+      isPublic: isPublic || false,
     });
     
     return res.status(201).json({
@@ -85,7 +86,7 @@ export const updateCategory = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
     const categoryId = parseInt(req.params.id);
-    const { name, order } = req.body;
+    const { name, order, isPublic } = req.body;
     
     // Find the category
     const category = await Category.findOne({
@@ -130,6 +131,11 @@ export const updateCategory = async (req: Request, res: Response) => {
     // Update order if provided
     if (order !== undefined && order !== null) {
       category.order = order;
+    }
+    
+    // Update isPublic if provided
+    if (isPublic !== undefined) {
+      category.isPublic = isPublic;
     }
     
     // Save the changes
@@ -227,6 +233,36 @@ export const reorderCategories = async (req: Request, res: Response) => {
     console.error('Reorder categories error:', error);
     return res.status(500).json({
       message: '更新分类顺序失败',
+    });
+  }
+};
+
+// Get public categories for a specific user (no authentication required)
+export const getPublicCategories = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    
+    if (!userId) {
+      return res.status(400).json({
+        message: '用户ID不能为空',
+      });
+    }
+    
+    const categories = await Category.findAll({
+      where: {
+        userId: parseInt(userId),
+        isPublic: true,
+      },
+      order: [['order', 'ASC'], ['createdAt', 'ASC']],
+    });
+    
+    return res.status(200).json({
+      categories,
+    });
+  } catch (error) {
+    console.error('Get public categories error:', error);
+    return res.status(500).json({
+      message: '获取公开分类失败',
     });
   }
 };

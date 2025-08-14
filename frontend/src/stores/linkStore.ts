@@ -11,11 +11,13 @@ export interface Link {
   description?: string;
   icon?: string;
   order: number;
+  isPublic: boolean;
   createdAt?: string;
   updatedAt?: string;
   category?: {
     id: number;
     name: string;
+    isPublic?: boolean;
   };
 }
 
@@ -62,6 +64,7 @@ export const useLinkStore = defineStore('link', () => {
     url: string;
     description?: string;
     icon?: string;
+    isPublic?: boolean;
   }) => {
     loading.value = true;
     error.value = null;
@@ -89,6 +92,7 @@ export const useLinkStore = defineStore('link', () => {
     icon?: string;
     categoryId?: number;
     order?: number;
+    isPublic?: boolean;
   }) => {
     loading.value = true;
     error.value = null;
@@ -173,6 +177,36 @@ export const useLinkStore = defineStore('link', () => {
     error.value = null;
   };
 
+  // 获取指定用户的公开链接
+  const fetchPublicLinks = async (userId: number) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const response = await api.get(`/links/public/${userId}`);
+      return response.data;
+    } catch (err: any) {
+      error.value = err.response?.data?.message || '获取公开链接失败';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // 获取指定用户指定分类的公开链接
+  const fetchPublicLinksByCategory = async (userId: number, categoryId: number) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const response = await api.get(`/links/public/${userId}/category/${categoryId}`);
+      return response.data;
+    } catch (err: any) {
+      error.value = err.response?.data?.message || '获取公开链接失败';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     links,
     loading,
@@ -184,6 +218,8 @@ export const useLinkStore = defineStore('link', () => {
     deleteLink,
     reorderLinks,
     getLinksByCategory,
-    clearLinks
+    clearLinks,
+    fetchPublicLinks,
+    fetchPublicLinksByCategory
   };
 });

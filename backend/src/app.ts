@@ -40,8 +40,8 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   res.status(500).send('Something went wrong!');
 });
 
-// Sync database
-sequelize.sync().then(() => {
+// Sync database with alter option to update table structure
+sequelize.sync({ alter: true }).then(() => {
   console.log('Database synced successfully');
 }).catch((error) => {
   console.error('Error syncing database:', error);

@@ -41,7 +41,9 @@ export const initUserModel = (sequelize: Sequelize) => {
         allowNull: false,
         unique: true,
         validate: {
-          isEmail: true,
+          isEmail: {
+            msg: '请输入有效的邮箱地址（例如：user@example.com）'
+          },
         },
       },
       password: {
