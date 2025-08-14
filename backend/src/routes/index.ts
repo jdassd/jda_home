@@ -1,6 +1,7 @@
 import express from 'express';
 import authRoutes from './authRoutes';
 import categoryRoutes from './categoryRoutes';
+import linkRoutes from './linkRoutes';
 
 const router = express.Router();
 
@@ -16,12 +17,11 @@ router.use('/auth', authRoutes);
 // Register category routes
 router.use('/categories', categoryRoutes);
 
+// Register link routes
+router.use('/links', linkRoutes);
+
 // Placeholder routes for future implementation
 router.use('/users', (req, res) => {
-  res.status(500).json({ message: 'Not implemented yet' });
-});
-
-router.use('/links', (req, res) => {
   res.status(500).json({ message: 'Not implemented yet' });
 });
 

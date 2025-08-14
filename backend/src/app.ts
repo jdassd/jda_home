@@ -10,13 +10,16 @@ dotenv.config();
 import sequelize from './config/database';
 import { initUserModel } from './models/User';
 import { initCategoryModel, setupCategoryAssociations } from './models/Category';
+import { initLinkModel, setupLinkAssociations } from './models/Link';
 
 // Initialize models
 initUserModel(sequelize);
 initCategoryModel(sequelize);
+initLinkModel(sequelize);
 
 // Setup associations
 setupCategoryAssociations();
+setupLinkAssociations();
 
 import routes from './routes';
 
