@@ -25,6 +25,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus';
 import type { FormInstance, FormRules } from 'element-plus';
 import axios from 'axios';
 
@@ -81,39 +82,56 @@ const toggleForm = () => {
 const handleSubmit = async () => {
   if (!formRef.value) return;
   
-  await formRef.value.validate(async (valid) => {
+  try {
+    const valid = await formRef.value.validate();
     if (valid) {
-      try {
-        if (isRegister.value) {
-          // Register user
-          const response = await axios.post('http://localhost:3000/api/auth/register', {
-            username: form.username,
-            email: form.email,
-            password: form.password
-          });
-          
-          ElMessage.success(response.data.message);
-          // Switch to login form after successful registration
-          isRegister.value = false;
-        } else {
-          // Login user
-          const response = await axios.post('http://localhost:3000/api/auth/login', {
-            email: form.email,
-            password: form.password
-          });
-          
-          // Store token in localStorage
+      if (isRegister.value) {
+        // Register user
+        const response = await axios.post('http://localhost:3000/api/auth/register', {
+          username: form.username,
+          email: form.email,
+          password: form.password
+        });
+        
+        // Store token if provided
+        if (response.data.token) {
           localStorage.setItem('token', response.data.token);
-          
-          ElMessage.success(response.data.message);
-          // Redirect to home page after successful login
-          router.push('/home');
         }
-      } catch (error: any) {
-        ElMessage.error(error.response?.data?.message || '操作失败');
+        
+        ElMessage.success(response.data.message || '注册成功');
+        // Clear form data
+        form.username = '';
+        form.email = '';
+        form.password = '';
+        form.confirmPassword = '';
+        // Switch to login form after successful registration
+        isRegister.value = false;
+        ElMessage.info('请使用您刚注册的账号登录');
+      } else {
+        // Login user
+        const response = await axios.post('http://localhost:3000/api/auth/login', {
+          email: form.email,
+          password: form.password
+        });
+        
+        // Store token in localStorage
+        localStorage.setItem('token', response.data.token);
+        
+        ElMessage.success(response.data.message || '登录成功');
+        // Redirect to home page after successful login and refresh to update auth state
+        await router.push('/');
+        // Refresh the page to ensure auth state is updated
+        window.location.reload();
       }
     }
-  });
+  } catch (error: any) {
+    if (error.response) {
+      ElMessage.error(error.response?.data?.message || '操作失败');
+    } else if (error.message) {
+      // Form validation error
+      console.log('Validation failed:', error);
+    }
+  }
 };
 </script>
 

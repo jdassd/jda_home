@@ -34,6 +34,9 @@ router.beforeEach((to, from, next) => {
   // Redirect to login page if no token and trying to access protected routes
   if (!token && to.name !== 'login' && to.name !== 'register') {
     next({ name: 'login' });
+  } else if (token && (to.name === 'login' || to.name === 'register')) {
+    // If already logged in, redirect to home when trying to access login/register
+    next({ name: 'home' });
   } else {
     next();
   }
