@@ -9,9 +9,14 @@ dotenv.config();
 // Import database
 import sequelize from './config/database';
 import { initUserModel } from './models/User';
+import { initCategoryModel, setupCategoryAssociations } from './models/Category';
 
 // Initialize models
 initUserModel(sequelize);
+initCategoryModel(sequelize);
+
+// Setup associations
+setupCategoryAssociations();
 
 import routes from './routes';
 

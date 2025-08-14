@@ -4,7 +4,12 @@
     <p>欢迎来到您的私人导航网站！</p>
     <div v-if="authStore.isAuthenticated">
       <p>您好，{{ authStore.user?.username }}!</p>
-      <el-button @click="handleLogout">退出登录</el-button>
+      <div class="actions">
+        <el-button type="primary" @click="$router.push('/categories')">
+          分类管理
+        </el-button>
+        <el-button @click="handleLogout">退出登录</el-button>
+      </div>
     </div>
     <div v-else>
       <p>请登录以访问您的个性化导航页面。</p>
@@ -33,5 +38,11 @@ const handleLogout = () => {
 <style scoped>
 .home {
   padding: 20px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
 }
 </style>

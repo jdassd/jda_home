@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../pages/HomeView.vue'
 import LoginView from '../pages/LoginView.vue'
+import CategoryView from '../pages/CategoryView.vue'
 
 // Define routes
 const routes = [
@@ -18,6 +19,12 @@ const routes = [
     path: '/register',
     name: 'register',
     component: LoginView
+  },
+  {
+    path: '/categories',
+    name: 'categories',
+    component: CategoryView,
+    meta: { requiresAuth: true }
   }
 ]
 
