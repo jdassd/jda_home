@@ -48,8 +48,8 @@
   --font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
-/* 夜间模式变量 */
-body.dark {
+/* 夜间模式变量 - 暂时保留，待功能开发完成后启用 */
+/* body.dark {
   --primary-color: #667eea;
   --primary-hover: #764ba2;
   --primary-light: #8b9af5;
@@ -65,9 +65,9 @@ body.dark {
   --text-muted: #8898aa;
   --border-color: #4a4a6a;
   --bg-color: #1e1e2d;
-  --white: #1e1e2d; /* 在暗色模式下，白色背景变为暗色 */
-  --dark: #e9ecef; /* 在暗色模式下，暗色文本变为亮色 */
-}
+  --white: #1e1e2d;
+  --dark: #e9ecef;
+} */
 
 /* 全局重置 - 修复PC端显示问题 */
 * {

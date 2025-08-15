@@ -92,12 +92,9 @@
           </router-link>
 
           <!-- 主题切换 -->
-          <button class="theme-toggle" @click="toggleTheme">
-            <svg v-if="!isDark" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+          <button class="theme-toggle theme-toggle-disabled" @click="showThemeMessage" title="夜间模式正在开发中">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
               <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
-            </svg>
-            <svg v-else width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"/>
             </svg>
           </button>
         </div>
@@ -132,29 +129,22 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const showUserDropdown = ref(false)
-const isDark = ref(false)
 
-// 切换主题
-const toggleTheme = () => {
-  isDark.value = !isDark.value
-  document.body.classList.toggle('dark', isDark.value)
-  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+// 显示夜间模式开发中提示
+const showThemeMessage = () => {
+  ElMessage.info('夜间模式正在开发中，敬请期待！')
 }
 
-// 计算属性，用于动态背景
+// 计算属性，用于动态背景 - 保持固定的浅色主题
 const layoutBackground = computed(() => {
-  return isDark.value
-    ? 'linear-gradient(135deg, #1e1e2d 0%, #2a2c3e 100%)'
-    : 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
+  return 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
 })
 
-// 初始化主题
+// 初始化
 onMounted(() => {
-  const savedTheme = localStorage.getItem('theme')
-  if (savedTheme === 'dark') {
-    isDark.value = true
-    document.body.classList.add('dark')
-  }
+  // 移除之前保存的夜间模式设置
+  localStorage.removeItem('theme')
+  document.body.classList.remove('dark')
   
   // 点击外部关闭下拉菜单
   document.addEventListener('click', handleClickOutside)
@@ -447,6 +437,18 @@ const handleSettings = () => {
   transform: rotate(180deg);
 }
 
+/* 禁用状态的主题切换按钮 */
+.theme-toggle-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.theme-toggle-disabled:hover {
+  transform: none;
+  background: rgba(94, 114, 228, 0.1);
+  color: var(--primary-color);
+}
+
 /* 主内容区域 - 确保全宽 */
 .main-content {
   flex: 1;
@@ -489,41 +491,7 @@ const handleSettings = () => {
   transform: translateY(-10px);
 }
 
-/* 暗色主题下的特定样式 */
-:global(body.dark) .navbar,
-:global(body.dark) .footer {
-  background: rgba(29, 29, 45, 0.8); /* 使用变量 --bg-color 稍微透明化 */
-  border-color: var(--border-color);
-}
-
-:global(body.dark) .dropdown-menu {
-  background: var(--primary-bg);
-  border: 1px solid var(--border-color);
-}
-
-:global(body.dark) .brand-text {
-  background: linear-gradient(135deg, #8b9af5 0%, #667eea 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-}
-
-:global(body.dark) .nav-link:hover {
-  background: rgba(102, 126, 234, 0.15);
-  color: var(--primary-light);
-}
-
-:global(body.dark) .nav-link.active {
-  background: var(--gradient-primary);
-  color: #e9ecef;
-}
-
-:global(body.dark) .user-avatar {
-  background: rgba(102, 126, 234, 0.15);
-}
-
-:global(body.dark) .user-avatar:hover {
-  background: rgba(102, 126, 234, 0.25);
-}
+/* 暗色主题样式已移除，因为夜间模式正在开发中 */
 
 /* 响应式 - 平板和手机 */
 @media (max-width: 991px) {
