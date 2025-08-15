@@ -126,17 +126,6 @@
             </div>
           </div>
         </div>
-
-        <!-- 危险操作 -->
-        <div class="profile-section danger-section">
-          <div class="section-header">
-            <h2 class="section-title">危险操作</h2>
-          </div>
-          <div class="danger-warning">
-            <p>以下操作不可恢复，请谨慎操作</p>
-            <el-button type="danger" plain @click="handleDeleteAccount">删除账户</el-button>
-          </div>
-        </div>
       </div>
     </div>
   </MainLayout>
@@ -203,41 +192,6 @@ const formatDate = (dateStr: string | undefined) => {
 const handleChangePassword = () => {
   // 跳转到忘记密码页面
   router.push('/forgot-password')
-}
-
-// 删除账户
-const handleDeleteAccount = async () => {
-  try {
-    await ElMessageBox.confirm(
-      '删除账户后，您的所有数据将被永久删除且无法恢复。确定要继续吗？',
-      '危险操作',
-      {
-        confirmButtonText: '确定删除',
-        cancelButtonText: '取消',
-        type: 'warning',
-        confirmButtonClass: 'el-button--danger'
-      }
-    )
-    
-    // 二次确认
-    await ElMessageBox.prompt(
-      '请输入您的用户名以确认删除操作',
-      '二次确认',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        inputPattern: new RegExp(`^${userInfo.value.username}$`),
-        inputErrorMessage: '用户名不正确'
-      }
-    )
-    
-    // TODO: 调用后端API删除账户
-    ElMessage.success('账户已删除')
-    authStore.logout()
-    window.location.href = '/login'
-  } catch {
-    // 用户取消
-  }
 }
 
 // 初始化
@@ -443,23 +397,6 @@ onMounted(async () => {
   font-size: 14px;
   color: #8492a6;
   margin-top: 4px;
-}
-
-/* 危险操作 */
-.danger-section {
-  border: 1px solid #fde2e2;
-  background: #fef5f5;
-}
-
-.danger-warning {
-  text-align: center;
-  padding: 20px;
-}
-
-.danger-warning p {
-  font-size: 14px;
-  color: #f56c6c;
-  margin: 0 0 16px 0;
 }
 
 /* 响应式设计 */
