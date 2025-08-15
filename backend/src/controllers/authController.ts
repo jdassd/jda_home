@@ -57,6 +57,8 @@ export const register = async (req: Request, res: Response) => {
         id: user.id,
         username: user.username,
         email: user.email,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
       },
       token,
     });
@@ -350,6 +352,40 @@ export const getTokenRemainingTime = async (req: Request, res: Response) => {
     console.error('Get token remaining time error:', error);
     return res.status(500).json({
       message: '服务器内部错误',
+    });
+  }
+};
+
+// Get user info by ID (public endpoint)
+export const getUserInfo = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    
+    if (!userId) {
+      return res.status(400).json({
+        message: '用户ID不能为空',
+      });
+    }
+    
+    const user = await User.findByPk(userId, {
+      attributes: ['id', 'username', 'createdAt']
+    });
+    
+    if (!user) {
+      return res.status(404).json({
+        message: '用户不存在',
+      });
+    }
+    
+    return res.status(200).json({
+      id: user.id,
+      username: user.username,
+      createdAt: user.createdAt,
+    });
+  } catch (error) {
+    console.error('Get user info error:', error);
+    return res.status(500).json({
+      message: '获取用户信息失败',
     });
   }
 };

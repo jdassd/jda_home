@@ -3,6 +3,8 @@ import HomeView from '../pages/HomeView.vue'
 import LoginView from '../pages/LoginView.vue'
 import CategoryView from '../pages/CategoryView.vue'
 import UserHomeView from '../pages/UserHomeView.vue'
+import ShareView from '../pages/ShareView.vue'
+import ProfileView from '../pages/ProfileView.vue'
 import ForgotPasswordView from '../pages/ForgotPasswordView.vue'
 
 // Define routes
@@ -37,6 +39,17 @@ const routes = [
     path: '/user/:userId',
     name: 'userHome',
     component: UserHomeView
+  },
+  {
+    path: '/share/:userId',
+    name: 'share',
+    component: ShareView
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: ProfileView,
+    meta: { requiresAuth: true }
   }
 ]
 
@@ -51,7 +64,7 @@ router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token');
   
   // Define public routes that don't require authentication
-  const publicRoutes = ['login', 'register', 'forgotPassword'];
+  const publicRoutes = ['login', 'register', 'forgotPassword', 'share', 'userHome'];
   
   // Redirect to login page if no token and trying to access protected routes
   if (!token && !publicRoutes.includes(to.name as string)) {

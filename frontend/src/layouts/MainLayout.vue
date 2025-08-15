@@ -38,7 +38,7 @@
 
         <div class="navbar-actions">
           <div v-if="authStore.isAuthenticated" class="user-menu">
-            <div class="user-avatar" @click.stop="showUserDropdown = !showUserDropdown">
+            <div class="user-avatar" @click.stop="handleUserDropdown">
               <div class="avatar-circle">
                 {{ authStore.user?.username?.charAt(0)?.toUpperCase() || 'U' }}
               </div>
@@ -59,6 +59,22 @@
                       <div class="user-name-large">{{ authStore.user?.username }}</div>
                       <div class="user-email">{{ authStore.user?.email }}</div>
                     </div>
+                  </div>
+                </div>
+                <div class="user-stats">
+                  <div class="stat-item">
+                    <span class="stat-value">{{ userStats.joinDays }}</span>
+                    <span class="stat-label">天</span>
+                  </div>
+                  <div class="stat-divider"></div>
+                  <div class="stat-item">
+                    <span class="stat-value">{{ userStats.categoriesCount }}</span>
+                    <span class="stat-label">分类</span>
+                  </div>
+                  <div class="stat-divider"></div>
+                  <div class="stat-item">
+                    <span class="stat-value">{{ userStats.linksCount }}</span>
+                    <span class="stat-label">链接</span>
                   </div>
                 </div>
                 <div class="dropdown-divider"></div>
@@ -123,10 +139,14 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
+import { useCategoryStore } from '../stores/categoryStore'
+import { useLinkStore } from '../stores/linkStore'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const categoryStore = useCategoryStore()
+const linkStore = useLinkStore()
 
 const showUserDropdown = ref(false)
 
@@ -140,19 +160,58 @@ const layoutBackground = computed(() => {
   return 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
 })
 
+// 用户统计信息
+const userStats = computed(() => {
+  if (!authStore.user) {
+    return {
+      joinDays: 0,
+      categoriesCount: 0,
+      linksCount: 0
+    }
+  }
+  // 计算注册天数
+  const createdAt = new Date(authStore.user.createdAt || Date.now())
+  const now = new Date()
+  const diffTime = Math.abs(now.getTime() - createdAt.getTime())
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  
+  return {
+    joinDays: diffDays,
+    categoriesCount: categoryStore.categories?.length || 0,
+    linksCount: linkStore.links?.length || 0
+  }
+})
+
 // 初始化
-onMounted(() => {
+onMounted(async () => {
   // 移除之前保存的夜间模式设置
   localStorage.removeItem('theme')
   document.body.classList.remove('dark')
   
   // 点击外部关闭下拉菜单
   document.addEventListener('click', handleClickOutside)
+  
+  // 在用户登录时加载数据
+  if (authStore.isAuthenticated) {
+    loadUserData()
+  }
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
+
+// 加载用户数据
+const loadUserData = async () => {
+  try {
+    await Promise.all([
+      categoryStore.fetchCategories(),
+      linkStore.fetchLinks()
+    ])
+  } catch (error) {
+    console.error('Failed to load user data:', error)
+  }
+}
 
 // 处理点击外部
 const handleClickOutside = () => {
@@ -167,9 +226,18 @@ const handleLogout = () => {
   showUserDropdown.value = false
 }
 
+// 监听下拉菜单显示，动态加载数据
+const handleUserDropdown = async () => {
+  showUserDropdown.value = !showUserDropdown.value
+  if (showUserDropdown.value && authStore.isAuthenticated) {
+    // 当打开下拉菜单时加载最新数据
+    await loadUserData()
+  }
+}
+
 // 处理个人资料
 const handleProfile = () => {
-  ElMessage.info('个人资料功能开发中')
+  router.push('/profile')
   showUserDropdown.value = false
 }
 
@@ -359,7 +427,7 @@ const handleSettings = () => {
 }
 
 .dropdown-header {
-  padding: 16px;
+  padding: 20px;
   background: var(--gradient-primary);
 }
 
@@ -392,6 +460,45 @@ const handleSettings = () => {
   color: rgba(255, 255, 255, 0.9);
   font-size: 13px;
   margin-top: 2px;
+}
+
+/* 用户统计信息 */
+.user-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  margin: 0 -1px;
+}
+
+.user-stats .stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.user-stats .stat-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--primary-color);
+  line-height: 1;
+}
+
+.user-stats .stat-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.user-stats .stat-divider {
+  width: 1px;
+  height: 32px;
+  background: var(--border-color);
+  margin: 0 8px;
 }
 
 .dropdown-divider {

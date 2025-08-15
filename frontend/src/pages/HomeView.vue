@@ -5,7 +5,7 @@
       <section class="hero-section">
         <div class="hero-content">
           <h1 class="hero-title fade-in">
-            <span class="gradient-text">导航空间</span>
+            <span class="gradient-text">{{ authStore.isAuthenticated ? `欢迎回来，${authStore.user?.username}` : '导航空间' }}</span>
             <span class="hero-subtitle">您的个人网址收藏夹</span>
           </h1>
           <p class="hero-description fade-in" style="animation-delay: 0.2s">
@@ -41,7 +41,13 @@
               </svg>
               管理分类
             </router-link>
-            <button @click="handleAddQuickLink" class="action-btn secondary">
+            <router-link :to="`/share/${authStore.user?.id}`" class="action-btn secondary">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z"/>
+              </svg>
+              我的分享页
+            </router-link>
+            <button @click="handleAddQuickLink" class="action-btn tertiary">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/>
               </svg>
@@ -242,16 +248,18 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { useCategoryStore } from '../stores/categoryStore'
 import { useLinkStore } from '../stores/linkStore'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import MainLayout from '../layouts/MainLayout.vue'
 
 // Store
 const authStore = useAuthStore()
 const categoryStore = useCategoryStore()
 const linkStore = useLinkStore()
+const router = useRouter()
 
 // 状态
 const searchQuery = ref('')
@@ -517,6 +525,18 @@ onMounted(async () => {
 .action-btn.secondary:hover {
   background: rgba(255, 255, 255, 0.3);
   border-color: white;
+  transform: translateY(-2px);
+}
+
+.action-btn.tertiary {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.action-btn.tertiary:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
   transform: translateY(-2px);
 }
 
