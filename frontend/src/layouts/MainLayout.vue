@@ -123,7 +123,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { ElMessage } from 'element-plus'
@@ -137,15 +137,24 @@ const isDark = ref(false)
 // 切换主题
 const toggleTheme = () => {
   isDark.value = !isDark.value
-  document.documentElement.classList.toggle('dark-theme', isDark.value)
+  document.body.classList.toggle('dark', isDark.value)
   localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
 }
+
+// 计算属性，用于动态背景
+const layoutBackground = computed(() => {
+  return isDark.value
+    ? 'linear-gradient(135deg, #1e1e2d 0%, #2a2c3e 100%)'
+    : 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
+})
 
 // 初始化主题
 onMounted(() => {
   const savedTheme = localStorage.getItem('theme')
-  isDark.value = savedTheme === 'dark'
-  document.documentElement.classList.toggle('dark-theme', isDark.value)
+  if (savedTheme === 'dark') {
+    isDark.value = true
+    document.body.classList.add('dark')
+  }
   
   // 点击外部关闭下拉菜单
   document.addEventListener('click', handleClickOutside)
@@ -189,7 +198,8 @@ const handleSettings = () => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: v-bind(layoutBackground);
+  transition: background 0.3s ease;
 }
 
 /* 导航栏样式 - 确保全宽 */
@@ -479,25 +489,40 @@ const handleSettings = () => {
   transform: translateY(-10px);
 }
 
-/* 暗色主题 */
-:global(.dark-theme) {
-  --text-primary: #e4e6eb;
-  --text-secondary: #b0b3b8;
-  --bg-color: #18191a;
-  --white: #242526;
-  --border-color: #3a3b3c;
+/* 暗色主题下的特定样式 */
+:global(body.dark) .navbar,
+:global(body.dark) .footer {
+  background: rgba(29, 29, 45, 0.8); /* 使用变量 --bg-color 稍微透明化 */
+  border-color: var(--border-color);
 }
 
-:global(.dark-theme) .navbar {
-  background: rgba(36, 37, 38, 0.9);
+:global(body.dark) .dropdown-menu {
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
 }
 
-:global(.dark-theme) .dropdown-menu {
-  background: #242526;
+:global(body.dark) .brand-text {
+  background: linear-gradient(135deg, #8b9af5 0%, #667eea 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
-:global(.dark-theme) .footer {
-  background: rgba(36, 37, 38, 0.9);
+:global(body.dark) .nav-link:hover {
+  background: rgba(102, 126, 234, 0.15);
+  color: var(--primary-light);
+}
+
+:global(body.dark) .nav-link.active {
+  background: var(--gradient-primary);
+  color: #e9ecef;
+}
+
+:global(body.dark) .user-avatar {
+  background: rgba(102, 126, 234, 0.15);
+}
+
+:global(body.dark) .user-avatar:hover {
+  background: rgba(102, 126, 234, 0.25);
 }
 
 /* 响应式 - 平板和手机 */

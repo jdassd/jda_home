@@ -48,6 +48,27 @@
   --font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
+/* 夜间模式变量 */
+body.dark {
+  --primary-color: #667eea;
+  --primary-hover: #764ba2;
+  --primary-light: #8b9af5;
+  --primary-bg: #2a2c3e;
+
+  --success-color: #2dce89;
+  --warning-color: #fb6340;
+  --danger-color: #f5365c;
+  --info-color: #11cdef;
+
+  --text-primary: #e9ecef;
+  --text-secondary: #adb5bd;
+  --text-muted: #8898aa;
+  --border-color: #4a4a6a;
+  --bg-color: #1e1e2d;
+  --white: #1e1e2d; /* 在暗色模式下，白色背景变为暗色 */
+  --dark: #e9ecef; /* 在暗色模式下，暗色文本变为亮色 */
+}
+
 /* 全局重置 - 修复PC端显示问题 */
 * {
   margin: 0;
@@ -67,6 +88,7 @@ body {
   line-height: 1.6;
   color: var(--text-primary);
   background: var(--bg-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   width: 100%;
