@@ -14,22 +14,109 @@
           
           <!-- 搜索框 -->
           <div class="search-container fade-in" style="animation-delay: 0.4s">
-            <div class="search-box">
-              <svg class="search-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
-              </svg>
-              <input 
-                type="text" 
-                v-model="searchQuery"
-                class="search-input" 
-                placeholder="搜索链接..."
-                @input="handleSearch"
-              />
-              <button v-if="searchQuery" @click="clearSearch" class="clear-btn">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M4.646 4.646a.5.5 0 01.708 0L8 7.293l2.646-2.647a.5.5 0 01.708.708L8.707 8l2.647 2.646a.5.5 0 01-.708.708L8 8.707l-2.646 2.647a.5.5 0 01-.708-.708L7.293 8 4.646 5.354a.5.5 0 010-.708z"/>
+            <div class="search-wrapper">
+              <div class="search-box">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
                 </svg>
-              </button>
+                <input
+                  type="text"
+                  v-model="searchQuery"
+                  class="search-input"
+                  :placeholder="`使用${searchEngines[selectedEngine].name}搜索...`"
+                  @input="handleSearch"
+                  @keypress.enter="handleSearchSubmit"
+                  @focus="showSuggestions = true"
+                  @blur="handleBlur"
+                />
+                
+                <!-- 搜索引擎选择器 -->
+                <div class="engine-selector">
+                  <button
+                    @click="showEngineMenu = !showEngineMenu"
+                    class="engine-selector-btn"
+                    :title="searchEngines[selectedEngine].name"
+                  >
+                    <img :src="searchEngines[selectedEngine].icon" :alt="searchEngines[selectedEngine].name" />
+                  </button>
+                  
+                  <!-- 搜索引擎下拉菜单 -->
+                  <div v-if="showEngineMenu" class="engine-menu">
+                    <button
+                      v-for="(engine, key) in searchEngines"
+                      :key="key"
+                      @click="selectEngine(key)"
+                      class="engine-option"
+                      :class="{ active: selectedEngine === key }"
+                    >
+                      <img :src="engine.icon" :alt="engine.name" />
+                      <span>{{ engine.name }}</span>
+                    </button>
+                  </div>
+                </div>
+                
+                <button v-if="searchQuery" @click="clearSearch" class="clear-btn">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M4.646 4.646a.5.5 0 01.708 0L8 7.293l2.646-2.647a.5.5 0 01.708.708L8.707 8l2.647 2.646a.5.5 0 01-.708.708L8 8.707l-2.646 2.647a.5.5 0 01-.708-.708L7.293 8 4.646 5.354a.5.5 0 010-.708z"/>
+                  </svg>
+                </button>
+              </div>
+              
+              <!-- 搜索建议下拉框 -->
+              <div v-if="showSuggestions && searchQuery && (localSearchResults.length > 0 || searchSuggestions.length > 0)" class="search-suggestions">
+                <!-- 本地搜索结果 -->
+                <div v-if="localSearchResults.length > 0" class="suggestion-group">
+                  <div class="suggestion-header">我的收藏</div>
+                  <a
+                    v-for="link in localSearchResults.slice(0, 5)"
+                    :key="link.id"
+                    :href="formatLinkUrl(link.url)"
+                    target="_blank"
+                    class="suggestion-item local-result"
+                    @mousedown.prevent="openLink(link.url)"
+                  >
+                    <div class="suggestion-icon">
+                      <img v-if="link.icon" :src="link.icon" :alt="link.title" @error="handleIconError($event)" />
+                      <span v-else class="default-icon">{{ getFirstLetter(link.title) }}</span>
+                    </div>
+                    <div class="suggestion-content">
+                      <div class="suggestion-title">{{ link.title }}</div>
+                      <div class="suggestion-url">{{ formatUrl(link.url) }}</div>
+                    </div>
+                  </a>
+                </div>
+                
+                <!-- 搜索引擎建议 -->
+                <div v-if="searchSuggestions.length > 0" class="suggestion-group">
+                  <div class="suggestion-header">搜索建议</div>
+                  <button
+                    v-for="(suggestion, index) in searchSuggestions.slice(0, 5)"
+                    :key="index"
+                    class="suggestion-item search-suggestion"
+                    @mousedown.prevent="searchWithSuggestion(suggestion)"
+                  >
+                    <svg class="suggestion-icon search" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                    </svg>
+                    <div class="suggestion-content">
+                      <div class="suggestion-title">{{ suggestion }}</div>
+                    </div>
+                  </button>
+                </div>
+                
+                <!-- 搜索引擎直达 -->
+                <div class="suggestion-group">
+                  <button
+                    class="suggestion-item search-direct"
+                    @mousedown.prevent="handleSearchSubmit"
+                  >
+                    <img :src="searchEngines[selectedEngine].icon" :alt="searchEngines[selectedEngine].name" class="suggestion-icon" />
+                    <div class="suggestion-content">
+                      <div class="suggestion-title">在 {{ searchEngines[selectedEngine].name }} 中搜索"{{ searchQuery }}"</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -261,10 +348,52 @@ const categoryStore = useCategoryStore()
 const linkStore = useLinkStore()
 const router = useRouter()
 
+// 定义搜索引擎类型
+type SearchEngineKey = 'baidu' | 'google' | 'bing' | 'sogou' | 'qihu360'
+
+interface SearchEngine {
+  name: string
+  url: string
+  icon: string
+}
+
 // 状态
 const searchQuery = ref('')
 const viewMode = ref<'grid' | 'list'>('grid')
 const loadingData = ref(false)
+const selectedEngine = ref<SearchEngineKey>('baidu') // 默认搜索引擎
+const showEngineMenu = ref(false) // 是否显示搜索引擎菜单
+const showSuggestions = ref(false) // 是否显示搜索建议
+const searchSuggestions = ref<string[]>([]) // 搜索建议列表
+
+// 搜索引擎配置
+const searchEngines: Record<SearchEngineKey, SearchEngine> = {
+  baidu: {
+    name: '百度',
+    url: 'https://www.baidu.com/s?wd=',
+    icon: 'https://www.baidu.com/favicon.ico'
+  },
+  google: {
+    name: '谷歌',
+    url: 'https://www.google.com/search?q=',
+    icon: 'https://www.google.com/favicon.ico'
+  },
+  bing: {
+    name: '必应',
+    url: 'https://www.bing.com/search?q=',
+    icon: 'https://www.bing.com/favicon.ico'
+  },
+  sogou: {
+    name: '搜狗',
+    url: 'https://www.sogou.com/web?query=',
+    icon: 'https://www.sogou.com/favicon.ico'
+  },
+  qihu360: {
+    name: '360搜索',
+    url: 'https://www.so.com/s?q=',
+    icon: 'https://www.so.com/favicon.ico'
+  }
+}
 
 // 统计信息
 const stats = computed(() => ({
@@ -311,14 +440,86 @@ const getCategoryLinks = (categoryId: number) => {
   )
 }
 
+// 本地搜索结果
+const localSearchResults = computed(() => {
+  if (!searchQuery.value) return []
+  
+  const query = searchQuery.value.toLowerCase()
+  const results: any[] = []
+  
+  // 搜索所有链接
+  linkStore.links.forEach(link => {
+    if (
+      link.title.toLowerCase().includes(query) ||
+      link.url.toLowerCase().includes(query) ||
+      (link.description && link.description.toLowerCase().includes(query))
+    ) {
+      results.push(link)
+    }
+  })
+  
+  return results
+})
+
 // 搜索处理
 const handleSearch = () => {
-  // 搜索逻辑已通过computed属性实现
+  // 更新搜索建议（这里使用模拟数据，实际可以调用API）
+  if (searchQuery.value) {
+    // 模拟搜索建议
+    const suggestions = [
+      searchQuery.value + ' 官网',
+      searchQuery.value + ' 教程',
+      searchQuery.value + ' 下载',
+      searchQuery.value + ' 文档',
+      searchQuery.value + ' github'
+    ]
+    searchSuggestions.value = suggestions
+  } else {
+    searchSuggestions.value = []
+  }
+}
+
+// 提交搜索（用于搜索引擎）
+const handleSearchSubmit = () => {
+  if (searchQuery.value.trim()) {
+    const engine = searchEngines[selectedEngine.value]
+    const searchUrl = engine.url + encodeURIComponent(searchQuery.value)
+    window.open(searchUrl, '_blank')
+    showSuggestions.value = false
+  }
+}
+
+// 使用建议进行搜索
+const searchWithSuggestion = (suggestion: string) => {
+  searchQuery.value = suggestion
+  handleSearchSubmit()
+}
+
+// 打开链接
+const openLink = (url: string) => {
+  window.open(formatLinkUrl(url), '_blank')
+  showSuggestions.value = false
+}
+
+// 处理失焦事件
+const handleBlur = () => {
+  // 延迟关闭，让点击事件先执行
+  setTimeout(() => {
+    showSuggestions.value = false
+  }, 200)
+}
+
+// 选择搜索引擎
+const selectEngine = (engineKey: string | number) => {
+  selectedEngine.value = String(engineKey) as SearchEngineKey
+  showEngineMenu.value = false
 }
 
 // 清除搜索
 const clearSearch = () => {
   searchQuery.value = ''
+  searchSuggestions.value = []
+  showSuggestions.value = false
 }
 
 // 快速添加链接
@@ -381,6 +582,14 @@ onMounted(async () => {
       loadingData.value = false
     }
   }
+  
+  // 添加点击外部关闭搜索引擎菜单的事件监听
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement
+    if (!target.closest('.engine-selector')) {
+      showEngineMenu.value = false
+    }
+  })
 })
 </script>
 
@@ -396,7 +605,7 @@ onMounted(async () => {
   position: relative;
   padding: 80px 20px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .hero-content {
@@ -434,8 +643,14 @@ onMounted(async () => {
 
 /* 搜索框 */
 .search-container {
-  max-width: 500px;
+  max-width: 600px;
   margin: 0 auto 32px;
+  position: relative;
+  z-index: 100;
+}
+
+.search-wrapper {
+  position: relative;
 }
 
 .search-box {
@@ -461,7 +676,7 @@ onMounted(async () => {
 
 .search-input {
   width: 100%;
-  padding: 16px 50px;
+  padding: 16px 120px 16px 50px;
   font-size: 16px;
   border: none;
   background: transparent;
@@ -470,6 +685,80 @@ onMounted(async () => {
 
 .search-input:focus {
   outline: none;
+}
+
+/* 搜索引擎选择器 */
+
+.engine-selector {
+  position: absolute;
+  right: 50px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.engine-selector-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition: var(--transition-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.engine-selector-btn:hover {
+  background: var(--bg-color);
+}
+
+.engine-selector-btn img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.engine-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  padding: 8px;
+  min-width: 150px;
+  z-index: 1000;
+}
+
+.engine-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition-base);
+  text-align: left;
+  font-size: 14px;
+}
+
+.engine-option:hover {
+  background: var(--bg-color);
+}
+
+.engine-option.active {
+  background: var(--primary-bg);
+  color: var(--primary-color);
+}
+
+.engine-option img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
 }
 
 .clear-btn {
@@ -485,11 +774,121 @@ onMounted(async () => {
   color: var(--text-primary);
 }
 
+/* 搜索建议下拉框 */
+.search-suggestions {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.suggestion-group {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.suggestion-group:last-child {
+  border-bottom: none;
+}
+
+.suggestion-header {
+  padding: 12px 16px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition-base);
+  text-decoration: none;
+  color: var(--text-primary);
+}
+
+.suggestion-item:hover {
+  background: var(--bg-color);
+}
+
+.suggestion-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: white;
+  overflow: hidden;
+}
+
+.suggestion-icon img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.suggestion-icon.search {
+  background: var(--bg-color);
+  color: var(--text-secondary);
+}
+
+.suggestion-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.suggestion-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suggestion-url {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-direct {
+  background: var(--primary-bg);
+}
+
+.search-direct:hover {
+  background: var(--primary-light);
+}
+
+.search-direct .suggestion-title {
+  color: var(--primary-color);
+}
+
 /* 快速操作 */
 .quick-actions {
   display: flex;
   gap: 16px;
   justify-content: center;
+  position: relative;
+  z-index: 1;
 }
 
 .action-btn {
