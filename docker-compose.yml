@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # 后端服务
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nav-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:/app/data/database.sqlite}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost}
+    volumes:
+      # 数据持久化
+      - backend-data:/app/data
+      # 环境变量文件（如果存在）
+      - ./backend/.env:/app/.env:ro
+    networks:
+      - nav-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nav-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"  # 如果需要HTTPS
+    environment:
+      - API_URL=${API_URL:-http://backend:3000}
+    depends_on:
+      - backend
+    networks:
+      - nav-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+# 网络配置
+networks:
+  nav-network:
+    driver: bridge
+    name: nav-network
+
+# 数据卷配置
+volumes:
+  backend-data:
+    name: nav-backend-data
