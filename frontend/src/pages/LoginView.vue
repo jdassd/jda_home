@@ -81,12 +81,8 @@
                 <span v-if="errors.password" class="error-message">{{ errors.password }}</span>
               </div>
 
-              <!-- 记住我 & 忘记密码 -->
-              <div class="form-options">
-                <label class="checkbox-wrapper">
-                  <input type="checkbox" v-model="rememberMe" class="checkbox-input" />
-                  <span class="checkbox-label">记住我</span>
-                </label>
+              <!-- 忘记密码 -->
+              <div class="form-options" style="justify-content: flex-end;">
                 <a href="#" class="forgot-link" @click.prevent="handleForgotPassword">忘记密码？</a>
               </div>
 
@@ -213,29 +209,6 @@
             </button>
           </div>
 
-          <!-- 社交登录 -->
-          <div class="social-login">
-            <div class="divider">
-              <span>或使用以下方式登录</span>
-            </div>
-            <div class="social-buttons">
-              <button type="button" class="social-btn" @click="handleSocialLogin('github')">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clip-rule="evenodd"/>
-                </svg>
-                <span>GitHub</span>
-              </button>
-              <button type="button" class="social-btn" @click="handleSocialLogin('google')">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M19.8 10.2c0-.7-.1-1.4-.2-2H10v3.8h5.5c-.2 1.2-.9 2.3-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z" fill="#4285F4"/>
-                  <path d="M10 20c2.7 0 5-1 6.6-2.5l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.2H1.1v2.6C2.7 17.7 6.1 20 10 20z" fill="#34A853"/>
-                  <path d="M4.4 12c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V5.4H1.1C.4 6.8 0 8.3 0 10s.4 3.2 1.1 4.6l3.3-2.6z" fill="#FBBC04"/>
-                  <path d="M10 4c1.5 0 2.8.5 3.8 1.5l2.8-2.8C15 1.1 12.7 0 10 0 6.1 0 2.7 2.3 1.1 5.6l3.3 2.6C5.2 5.8 7.4 4 10 4z" fill="#EA4335"/>
-                </svg>
-                <span>Google</span>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -255,7 +228,6 @@ const isRegister = ref(false)
 const submitting = ref(false)
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
-const rememberMe = ref(false)
 
 // 表单数据
 const form = reactive({
@@ -374,12 +346,6 @@ const handleSubmit = async () => {
       // 保存token
       localStorage.setItem('token', response.data.token)
       
-      // 如果选择记住我，保存邮箱
-      if (rememberMe.value) {
-        localStorage.setItem('rememberedEmail', form.email)
-      } else {
-        localStorage.removeItem('rememberedEmail')
-      }
       
       ElMessage.success('登录成功！')
       
@@ -438,22 +404,7 @@ const handleForgotPassword = () => {
   ElMessage.info('忘记密码功能开发中')
 }
 
-// 处理社交登录
-const handleSocialLogin = (provider: string) => {
-  ElMessage.info(`${provider} 登录功能开发中`)
-}
 
-// 初始化
-const init = () => {
-  // 检查是否有记住的邮箱
-  const rememberedEmail = localStorage.getItem('rememberedEmail')
-  if (rememberedEmail) {
-    form.email = rememberedEmail
-    rememberMe.value = true
-  }
-}
-
-init()
 </script>
 
 <style scoped>
