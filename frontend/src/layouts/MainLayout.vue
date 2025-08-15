@@ -116,7 +116,7 @@
     <!-- 底部 -->
     <footer class="footer">
       <div class="footer-content">
-        <p>&copy; 2024 导航空间. All rights reserved.</p>
+        <p>&copy; 2025 导航空间. Made by Jdassd.</p>
       </div>
     </footer>
   </div>
