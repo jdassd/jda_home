@@ -83,7 +83,7 @@
 
               <!-- 忘记密码 -->
               <div class="form-options" style="justify-content: flex-end;">
-                <a href="#" class="forgot-link" @click.prevent="handleForgotPassword">忘记密码？</a>
+                <router-link to="/forgot-password" class="forgot-link">忘记密码？</router-link>
               </div>
 
               <!-- 登录按钮 -->
@@ -503,13 +503,6 @@ const handleSubmit = async () => {
     submitting.value = false
   }
 }
-
-// 处理忘记密码
-const handleForgotPassword = () => {
-  router.push('/forgot-password')
-}
-
-
 </script>
 
 <style scoped>
@@ -685,15 +678,53 @@ const handleForgotPassword = () => {
   font-size: 15px;
   border: 2px solid var(--border-color);
   border-radius: 12px;
-  background: var(--white);
+  background: var(--white) !important;
+  color: var(--text-primary) !important;
   transition: var(--transition-base);
   font-family: inherit;
+  -webkit-text-fill-color: var(--text-primary) !important; /* 修复 WebKit 浏览器的文字颜色问题 */
 }
 
 .form-input:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+  background: var(--white) !important;
+  color: var(--text-primary) !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+}
+
+/* 修复自动填充时的样式 */
+.form-input:-webkit-autofill,
+.form-input:-webkit-autofill:hover,
+.form-input:-webkit-autofill:focus,
+.form-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px var(--white) inset !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  box-shadow: 0 0 0 30px var(--white) inset !important;
+  background-color: var(--white) !important;
+  color: var(--text-primary) !important;
+}
+
+/* 修复占位符文字颜色 */
+.form-input::placeholder {
+  color: var(--text-muted) !important;
+  opacity: 0.7;
+}
+
+.form-input::-webkit-input-placeholder {
+  color: var(--text-muted) !important;
+  opacity: 0.7;
+}
+
+.form-input::-moz-placeholder {
+  color: var(--text-muted) !important;
+  opacity: 0.7;
+}
+
+.form-input:-ms-input-placeholder {
+  color: var(--text-muted) !important;
+  opacity: 0.7;
 }
 
 .toggle-password {
@@ -949,9 +980,33 @@ select.form-input {
   background-repeat: no-repeat;
   background-size: 20px;
   padding-right: 40px;
+  color: var(--text-primary) !important; /* 确保文字颜色 */
+  background-color: var(--white) !important; /* 确保背景色 */
 }
 
 select.form-input:focus {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23667eea' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+}
+
+/* 下拉选项样式 */
+select.form-input option {
+  color: var(--text-primary) !important;
+  background-color: var(--white) !important;
+  padding: 8px;
+}
+
+select.form-input option:hover {
+  background-color: var(--bg-color) !important;
+}
+
+/* 禁用选项的样式 */
+select.form-input option:disabled {
+  color: var(--text-secondary) !important;
+}
+
+/* 选中选项的样式 */
+select.form-input option:checked {
+  background-color: rgba(102, 126, 234, 0.1) !important;
+  font-weight: 500;
 }
 </style>

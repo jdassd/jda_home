@@ -23,6 +23,11 @@ const routes = [
     component: LoginView
   },
   {
+    path: '/forgot-password',
+    name: 'forgotPassword',
+    component: ForgotPasswordView
+  },
+  {
     path: '/categories',
     name: 'categories',
     component: CategoryView,
@@ -45,8 +50,11 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token');
   
+  // Define public routes that don't require authentication
+  const publicRoutes = ['login', 'register', 'forgotPassword'];
+  
   // Redirect to login page if no token and trying to access protected routes
-  if (!token && to.name !== 'login' && to.name !== 'register') {
+  if (!token && !publicRoutes.includes(to.name as string)) {
     next({ name: 'login' });
   } else if (token && (to.name === 'login' || to.name === 'register')) {
     // If already logged in, redirect to home when trying to access login/register

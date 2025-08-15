@@ -587,20 +587,60 @@ const goToLogin = () => {
   font-size: 15px;
   border: 2px solid var(--border-color);
   border-radius: 12px;
-  background: var(--white);
+  background: var(--white) !important;
+  color: var(--text-primary) !important;
   transition: var(--transition-base);
   font-family: inherit;
+  -webkit-text-fill-color: var(--text-primary) !important; /* 修复 WebKit 浏览器的文字颜色问题 */
 }
 
 .form-input:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+  background: var(--white) !important;
+  color: var(--text-primary) !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
 }
 
 .form-input:disabled {
-  background: var(--bg-color);
+  background: var(--bg-color) !important;
   cursor: not-allowed;
+  color: var(--text-secondary) !important;
+  -webkit-text-fill-color: var(--text-secondary) !important;
+}
+
+/* 修复自动填充时的样式 */
+.form-input:-webkit-autofill,
+.form-input:-webkit-autofill:hover,
+.form-input:-webkit-autofill:focus,
+.form-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px var(--white) inset !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  box-shadow: 0 0 0 30px var(--white) inset !important;
+  background-color: var(--white) !important;
+  color: var(--text-primary) !important;
+}
+
+/* 修复占位符文字颜色 */
+.form-input::placeholder {
+  color: var(--text-muted) !important;
+  opacity: 0.7;
+}
+
+.form-input::-webkit-input-placeholder {
+  color: var(--text-muted) !important;
+  opacity: 0.7;
+}
+
+.form-input::-moz-placeholder {
+  color: var(--text-muted) !important;
+  opacity: 0.7;
+}
+
+.form-input:-ms-input-placeholder {
+  color: var(--text-muted) !important;
+  opacity: 0.7;
 }
 
 .toggle-password {
