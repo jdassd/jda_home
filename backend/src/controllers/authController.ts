@@ -3,6 +3,10 @@ import { User } from '../models/User';
 import { generateToken } from '../utils/jwt';
 import sequelize from '../config/database';
 import { Op } from 'sequelize';
+import crypto from 'crypto';
+
+// 存储临时重置令牌（在生产环境中应该使用 Redis 或数据库）
+const resetTokens = new Map<string, { email: string; expires: Date; createdAt: Date }>();
 
 // Register a new user
 export const register = async (req: Request, res: Response) => {
@@ -186,21 +190,14 @@ export const getSecurityQuestion = async (req: Request, res: Response) => {
   }
 };
 
-// 重置密码
-export const resetPassword = async (req: Request, res: Response) => {
+// 验证安全问题答案
+export const verifySecurityAnswer = async (req: Request, res: Response) => {
   try {
-    const { email, securityAnswer, newPassword } = req.body;
+    const { email, securityAnswer } = req.body;
 
-    if (!email || !securityAnswer || !newPassword) {
+    if (!email || !securityAnswer) {
       return res.status(400).json({
-        message: '请填写所有必填字段',
-      });
-    }
-
-    // 验证新密码长度
-    if (newPassword.length < 6) {
-      return res.status(400).json({
-        message: '新密码长度至少为6个字符',
+        message: '请提供邮箱和安全问题答案',
       });
     }
 
@@ -223,9 +220,82 @@ export const resetPassword = async (req: Request, res: Response) => {
       });
     }
 
+    // 生成重置令牌
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const createdAt = new Date();
+    const expires = new Date(Date.now() + 60 * 1000); // 60秒有效期
+
+    // 存储令牌
+    resetTokens.set(resetToken, { email, expires, createdAt });
+
+    // 定时清理过期令牌
+    setTimeout(() => {
+      resetTokens.delete(resetToken);
+    }, 60 * 1000);
+
+    return res.status(200).json({
+      message: '验证成功',
+      resetToken,
+    });
+  } catch (error) {
+    console.error('Verify security answer error:', error);
+    return res.status(500).json({
+      message: '服务器内部错误',
+    });
+  }
+};
+
+// 重置密码
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { resetToken, newPassword } = req.body;
+
+    if (!resetToken || !newPassword) {
+      return res.status(400).json({
+        message: '请提供重置令牌和新密码',
+      });
+    }
+
+    // 验证新密码长度
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        message: '新密码长度至少为6个字符',
+      });
+    }
+
+    // 验证重置令牌
+    const tokenData = resetTokens.get(resetToken);
+    if (!tokenData) {
+      return res.status(401).json({
+        message: '无效的重置令牌',
+      });
+    }
+
+    // 检查令牌是否过期
+    if (tokenData.expires < new Date()) {
+      resetTokens.delete(resetToken);
+      return res.status(401).json({
+        message: '重置令牌已过期，请重新验证',
+      });
+    }
+
+    // 查找用户
+    const user = await User.findOne({
+      where: { email: tokenData.email },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        message: '用户不存在',
+      });
+    }
+
     // 更新密码
     await user.setPassword(newPassword);
     await user.save();
+
+    // 删除已使用的令牌
+    resetTokens.delete(resetToken);
 
     return res.status(200).json({
       message: '密码重置成功，请使用新密码登录',
@@ -239,6 +309,51 @@ export const resetPassword = async (req: Request, res: Response) => {
 };
 
 // Get current user
+// 获取令牌剩余时间
+export const getTokenRemainingTime = async (req: Request, res: Response) => {
+  try {
+    const { resetToken } = req.body;
+
+    if (!resetToken) {
+      return res.status(400).json({
+        message: '请提供重置令牌',
+      });
+    }
+
+    // 获取令牌数据
+    const tokenData = resetTokens.get(resetToken);
+    if (!tokenData) {
+      return res.status(404).json({
+        message: '令牌不存在或已过期',
+        remainingTime: 0,
+      });
+    }
+
+    // 计算剩余时间（秒）
+    const now = new Date();
+    const remainingTime = Math.max(0, Math.floor((tokenData.expires.getTime() - now.getTime()) / 1000));
+
+    if (remainingTime === 0) {
+      // 令牌已过期，删除它
+      resetTokens.delete(resetToken);
+      return res.status(410).json({
+        message: '令牌已过期',
+        remainingTime: 0,
+      });
+    }
+
+    return res.status(200).json({
+      remainingTime,
+      expires: tokenData.expires,
+    });
+  } catch (error) {
+    console.error('Get token remaining time error:', error);
+    return res.status(500).json({
+      message: '服务器内部错误',
+    });
+  }
+};
+
 export const getCurrentUser = async (req: Request, res: Response) => {
   try {
     // The user is attached to the request object by the auth middleware

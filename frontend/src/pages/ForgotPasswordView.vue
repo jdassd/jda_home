@@ -112,10 +112,10 @@
               </div>
 
               <div class="button-group">
-                <button type="button" class="back-btn" @click="currentStep = 1" :disabled="loading">
+                <button type="button" class="back-btn" @click="handleBackToStep1" :disabled="loading">
                   返回上一步
                 </button>
-                <button type="submit" class="submit-btn" :disabled="loading">
+                <button type="submit" class="submit-btn submit-btn-small" :disabled="loading">
                   <span v-if="!loading">验证答案</span>
                   <span v-else class="loading-wrapper">
                     <span class="loading-spinner"></span>
@@ -127,7 +127,35 @@
 
             <!-- 步骤3：设置新密码 -->
             <form v-else-if="currentStep === 3" key="step3" @submit.prevent="handlePasswordReset" class="reset-form">
-              <div class="form-group">
+              <!-- 倒计时进度条 -->
+              <div class="countdown-section" :class="{ urgent: remainingTime <= 10 }" v-if="remainingTime > 0">
+                <div class="countdown-header">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" class="countdown-icon">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                  </svg>
+                  <span class="countdown-text">验证剩余时间：<strong>{{ remainingTime }}</strong> 秒</span>
+                </div>
+                <div class="progress-bar-container">
+                  <div class="progress-bar" :style="{ width: progressPercentage + '%' }"></div>
+                </div>
+                <p class="countdown-hint">请在倒计时结束前完成密码重置</p>
+              </div>
+
+              <!-- 倒计时已结束提示 -->
+              <div class="timeout-section" v-else>
+                <div class="timeout-icon">
+                  <svg width="60" height="60" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                  </svg>
+                </div>
+                <h3 class="timeout-title">验证已过期</h3>
+                <p class="timeout-message">您的验证时间已超时，请重新验证安全问题</p>
+                <button type="button" class="back-btn" @click="handleTimeoutBack">
+                  重新验证
+                </button>
+              </div>
+
+              <div class="form-group" v-if="remainingTime > 0">
                 <label class="form-label">新密码</label>
                 <div class="input-wrapper">
                   <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
@@ -155,7 +183,7 @@
                 <span v-if="errors.newPassword" class="error-message">{{ errors.newPassword }}</span>
               </div>
 
-              <div class="form-group">
+              <div class="form-group" v-if="remainingTime > 0">
                 <label class="form-label">确认新密码</label>
                 <div class="input-wrapper">
                   <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
@@ -183,7 +211,7 @@
                 <span v-if="errors.confirmPassword" class="error-message">{{ errors.confirmPassword }}</span>
               </div>
 
-              <button type="submit" class="submit-btn" :disabled="loading">
+              <button type="submit" class="submit-btn" :disabled="loading || remainingTime <= 0" v-if="remainingTime > 0">
                 <span v-if="!loading">重置密码</span>
                 <span v-else class="loading-wrapper">
                   <span class="loading-spinner"></span>
@@ -230,10 +258,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
+
+// 创建独立的 axios 实例，不使用全局拦截器
+const apiClient = axios.create({
+  baseURL: 'http://localhost:3000/api'
+})
 
 const router = useRouter()
 
@@ -243,6 +276,10 @@ const loading = ref(false)
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 const securityQuestion = ref('')
+const resetToken = ref('') // 存储重置令牌
+const remainingTime = ref(60) // 剩余时间（秒）
+const progressPercentage = ref(100) // 进度条百分比
+let countdownInterval: number | null = null // 倒计时定时器
 
 // 表单数据
 const form = reactive({
@@ -288,7 +325,7 @@ const handleEmailSubmit = async () => {
   loading.value = true
   
   try {
-    const response = await axios.post('http://localhost:3000/api/auth/security-question', {
+    const response = await apiClient.post('/auth/security-question', {
       email: form.email
     })
     
@@ -313,10 +350,33 @@ const handleSecurityAnswer = async () => {
   
   loading.value = true
   
-  // 先验证答案是否正确（这里暂时只是切换到下一步，实际应该先验证）
-  // 为了安全，可以在最后一步一起提交验证
-  currentStep.value = 3
-  loading.value = false
+  try {
+    // 验证安全问题答案
+    const response = await apiClient.post('/auth/verify-security-answer', {
+      email: form.email,
+      securityAnswer: form.securityAnswer
+    })
+    
+    // 保存重置令牌
+    resetToken.value = response.data.resetToken
+    
+    // 验证成功，进入下一步
+    currentStep.value = 3
+    ElMessage.success('验证成功，请在60秒内设置新密码')
+    
+    // 启动倒计时
+    startCountdown()
+    
+  } catch (error: any) {
+    const message = error.response?.data?.message || '验证失败'
+    errors.securityAnswer = message
+    ElMessage.error(message)
+    // 不跳转页面，保持在当前步骤，让用户重新输入
+    // 清空答案输入框，让用户重新输入
+    form.securityAnswer = ''
+  } finally {
+    loading.value = false
+  }
 }
 
 // 步骤3：重置密码
@@ -344,20 +404,29 @@ const handlePasswordReset = async () => {
   loading.value = true
   
   try {
-    await axios.post('http://localhost:3000/api/auth/reset-password', {
-      email: form.email,
-      securityAnswer: form.securityAnswer,
+    // 使用重置令牌重置密码
+    await apiClient.post('/auth/reset-password', {
+      resetToken: resetToken.value,
       newPassword: form.newPassword
     })
     
     currentStep.value = 4
     ElMessage.success('密码重置成功！')
     
+    // 清除敏感数据
+    resetToken.value = ''
+    form.securityAnswer = ''
+    form.newPassword = ''
+    form.confirmPassword = ''
+    
   } catch (error: any) {
     const message = error.response?.data?.message || '密码重置失败'
-    if (message.includes('安全问题')) {
-      errors.securityAnswer = message
+    
+    if (message.includes('令牌')) {
+      // 令牌无效或过期，需要重新验证
+      ElMessage.error('验证已过期，请重新验证安全问题')
       currentStep.value = 2
+      resetToken.value = ''
     } else {
       ElMessage.error(message)
     }
@@ -368,8 +437,78 @@ const handlePasswordReset = async () => {
 
 // 返回登录页
 const goToLogin = () => {
+  // 清理倒计时
+  stopCountdown()
   router.push('/login')
 }
+
+// 返回步骤1
+const handleBackToStep1 = () => {
+  currentStep.value = 1
+  // 清除敏感数据
+  form.securityAnswer = ''
+  resetToken.value = ''
+  errors.securityAnswer = ''
+  // 清理倒计时
+  stopCountdown()
+}
+
+// 处理超时返回
+const handleTimeoutBack = () => {
+  currentStep.value = 2
+  resetToken.value = ''
+  form.newPassword = ''
+  form.confirmPassword = ''
+  errors.newPassword = ''
+  errors.confirmPassword = ''
+  remainingTime.value = 60
+  progressPercentage.value = 100
+}
+
+// 启动倒计时
+const startCountdown = () => {
+  remainingTime.value = 60
+  progressPercentage.value = 100
+  
+  // 清除之前的定时器
+  stopCountdown()
+  
+  // 每秒更新一次
+  countdownInterval = setInterval(async () => {
+    try {
+      // 调用后端接口获取实时剩余时间
+      const response = await apiClient.post('/auth/token-remaining-time', {
+        resetToken: resetToken.value
+      })
+      
+      remainingTime.value = response.data.remainingTime
+      progressPercentage.value = (remainingTime.value / 60) * 100
+      
+      if (remainingTime.value <= 0) {
+        stopCountdown()
+        ElMessage.warning('验证已过期，请重新验证')
+      }
+    } catch (error) {
+      // 如果接口调用失败，停止倒计时
+      remainingTime.value = 0
+      progressPercentage.value = 0
+      stopCountdown()
+    }
+  }, 1000)
+}
+
+// 停止倒计时
+const stopCountdown = () => {
+  if (countdownInterval) {
+    clearInterval(countdownInterval)
+    countdownInterval = null
+  }
+}
+
+// 组件卸载时清理定时器
+onUnmounted(() => {
+  stopCountdown()
+})
 </script>
 
 <style scoped>
@@ -700,15 +839,23 @@ const goToLogin = () => {
 /* 按钮 */
 .submit-btn {
   width: 100%;
-  padding: 14px 24px;
-  font-size: 16px;
+  padding: 12px 24px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--white);
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   cursor: pointer;
   transition: var(--transition-base);
+}
+
+/* 步骤2中的验证答案按钮较小 */
+.submit-btn-small {
+  padding: 10px 20px;
+  font-size: 14px;
+  width: auto;
+  min-width: 120px;
 }
 
 .submit-btn:hover:not(:disabled) {
@@ -724,19 +871,20 @@ const goToLogin = () => {
 .button-group {
   display: flex;
   gap: 12px;
+  justify-content: flex-end;
 }
 
 .back-btn {
-  flex: 1;
-  padding: 14px 24px;
-  font-size: 16px;
-  font-weight: 600;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--text-primary);
   background: var(--white);
   border: 2px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: 10px;
   cursor: pointer;
   transition: var(--transition-base);
+  min-width: 100px;
 }
 
 .back-btn:hover:not(:disabled) {
@@ -871,5 +1019,133 @@ const goToLogin = () => {
   .button-group {
     flex-direction: column;
   }
+  
+  .button-group .back-btn,
+  .button-group .submit-btn-small {
+    width: 100%;
+  }
+}
+
+/* 倒计时区域样式 */
+.countdown-section {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.countdown-section.urgent {
+  border-color: var(--danger-color);
+  animation: urgentPulse 1s ease-in-out infinite;
+}
+
+@keyframes urgentPulse {
+  0%, 100% {
+    border-color: var(--danger-color);
+  }
+  50% {
+    border-color: rgba(239, 68, 68, 0.5);
+  }
+}
+
+.countdown-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.countdown-icon {
+  color: var(--primary-color);
+}
+
+.countdown-text {
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.countdown-text strong {
+  font-size: 18px;
+  color: var(--primary-color);
+  font-weight: 700;
+}
+
+.countdown-section.urgent .countdown-text strong {
+  color: var(--danger-color);
+  animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background: var(--border-color);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 4px;
+  transition: width 1s linear;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.countdown-section.urgent .progress-bar {
+  background: linear-gradient(90deg, #f87171 0%, #dc2626 100%);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.countdown-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* 超时提示样式 */
+.timeout-section {
+  text-align: center;
+  padding: 40px 20px;
+  background: var(--bg-color);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.timeout-icon {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: var(--danger-color);
+}
+
+.timeout-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+}
+
+.timeout-message {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 24px;
 }
 </style>
