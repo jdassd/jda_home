@@ -361,7 +361,19 @@ interface SearchEngine {
 const searchQuery = ref('')
 const viewMode = ref<'grid' | 'list'>('grid')
 const loadingData = ref(false)
-const selectedEngine = ref<SearchEngineKey>('baidu') // 默认搜索引擎
+
+// 从localStorage读取保存的搜索引擎，如果没有则使用百度作为默认
+const getDefaultEngine = (): SearchEngineKey => {
+  const saved = localStorage.getItem('preferredSearchEngine')
+  // 检查保存的值是否是有效的搜索引擎键
+  const validEngines: SearchEngineKey[] = ['baidu', 'google', 'bing', 'sogou', 'qihu360']
+  if (saved && validEngines.includes(saved as SearchEngineKey)) {
+    return saved as SearchEngineKey
+  }
+  return 'baidu'
+}
+
+const selectedEngine = ref<SearchEngineKey>(getDefaultEngine()) // 默认搜索引擎
 const showEngineMenu = ref(false) // 是否显示搜索引擎菜单
 const showSuggestions = ref(false) // 是否显示搜索建议
 const searchSuggestions = ref<string[]>([]) // 搜索建议列表
@@ -511,8 +523,11 @@ const handleBlur = () => {
 
 // 选择搜索引擎
 const selectEngine = (engineKey: string | number) => {
-  selectedEngine.value = String(engineKey) as SearchEngineKey
+  const key = String(engineKey) as SearchEngineKey
+  selectedEngine.value = key
   showEngineMenu.value = false
+  // 保存到localStorage
+  localStorage.setItem('preferredSearchEngine', key)
 }
 
 // 清除搜索
