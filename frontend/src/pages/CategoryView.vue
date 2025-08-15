@@ -182,7 +182,7 @@
                           </span>
                         </div>
                         <div class="link-info">
-                          <a :href="link.url" target="_blank" class="link-title">
+                          <a :href="formatLinkUrl(link.url)" target="_blank" class="link-title">
                             {{ link.title }}
                             <span v-if="link.isPublic" class="public-badge small" title="公开链接">
                               <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
@@ -503,10 +503,22 @@ const toggleCategory = (categoryId: number) => {
   expandedCategory.value = expandedCategory.value === categoryId ? null : categoryId
 }
 
-// 格式化URL
+// 格式化链接URL，确保有协议前缀
+const formatLinkUrl = (url: string) => {
+  // 如果URL已经包含协议，直接返回
+  if (/^https?:\/\//i.test(url)) {
+    return url
+  }
+  // 如果URL不包含协议，添加 http://
+  return 'http://' + url
+}
+
+// 格式化URL显示
 const formatUrl = (url: string) => {
   try {
-    const urlObj = new URL(url)
+    // 先确保URL有协议
+    const formattedUrl = formatLinkUrl(url)
+    const urlObj = new URL(formattedUrl)
     return urlObj.hostname.replace('www.', '')
   } catch {
     return url

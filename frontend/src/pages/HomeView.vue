@@ -117,7 +117,7 @@
               <a
                 v-for="link in getCategoryLinks(category.id).slice(0, viewMode === 'grid' ? 6 : undefined)"
                 :key="link.id"
-                :href="link.url"
+                :href="formatLinkUrl(link.url)"
                 target="_blank"
                 class="link-item"
                 :title="link.description || link.title"
@@ -323,10 +323,22 @@ const getFirstLetter = (text: string) => {
   return text.charAt(0).toUpperCase()
 }
 
-// 格式化URL
+// 格式化链接URL，确保有协议前缀
+const formatLinkUrl = (url: string) => {
+  // 如果URL已经包含协议，直接返回
+  if (/^https?:\/\//i.test(url)) {
+    return url
+  }
+  // 如果URL不包含协议，添加 http://
+  return 'http://' + url
+}
+
+// 格式化URL显示
 const formatUrl = (url: string) => {
   try {
-    const urlObj = new URL(url)
+    // 先确保URL有协议
+    const formattedUrl = formatLinkUrl(url)
+    const urlObj = new URL(formattedUrl)
     return urlObj.hostname.replace('www.', '')
   } catch {
     return url

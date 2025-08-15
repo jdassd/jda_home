@@ -120,7 +120,9 @@ const getCategoryLinks = (categoryId: number) => {
 
 // 打开链接
 const openLink = (url: string) => {
-  window.open(url, '_blank')
+  // 确保URL有协议前缀
+  const formattedUrl = /^https?:\/\//i.test(url) ? url : 'http://' + url
+  window.open(formattedUrl, '_blank')
 }
 
 // 跳转到管理页面
