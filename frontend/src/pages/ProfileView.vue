@@ -12,12 +12,6 @@
         <div class="profile-section">
           <div class="section-header">
             <h2 class="section-title">基本信息</h2>
-            <button v-if="!editingProfile" @click="startEditProfile" class="edit-btn">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
-              </svg>
-              编辑
-            </button>
           </div>
 
           <div class="info-grid">
@@ -26,7 +20,7 @@
               <label class="info-label">头像</label>
               <div class="avatar-display">
                 <div class="avatar">
-                  <span>{{ profileForm.username.charAt(0).toUpperCase() }}</span>
+                  <span>{{ userInfo.username.charAt(0).toUpperCase() }}</span>
                 </div>
                 <p class="avatar-tip">暂不支持自定义头像</p>
               </div>
@@ -35,25 +29,13 @@
             <!-- 用户名 -->
             <div class="info-item">
               <label class="info-label">用户名</label>
-              <div v-if="!editingProfile" class="info-value">{{ profileForm.username }}</div>
-              <el-input 
-                v-else 
-                v-model="profileForm.username" 
-                placeholder="请输入用户名"
-                :disabled="loading"
-              />
+              <div class="info-value">{{ userInfo.username }}</div>
             </div>
 
             <!-- 邮箱 -->
             <div class="info-item">
               <label class="info-label">邮箱</label>
-              <div v-if="!editingProfile" class="info-value">{{ profileForm.email }}</div>
-              <el-input 
-                v-else 
-                v-model="profileForm.email" 
-                placeholder="请输入邮箱"
-                :disabled="loading"
-              />
+              <div class="info-value">{{ userInfo.email }}</div>
             </div>
 
             <!-- 注册时间 -->
@@ -67,12 +49,6 @@
               <label class="info-label">最后更新</label>
               <div class="info-value">{{ formatDate(userInfo.updatedAt) }}</div>
             </div>
-          </div>
-
-          <!-- 编辑操作按钮 -->
-          <div v-if="editingProfile" class="edit-actions">
-            <el-button @click="cancelEditProfile" :disabled="loading">取消</el-button>
-            <el-button type="primary" @click="saveProfile" :loading="loading">保存修改</el-button>
           </div>
         </div>
 
@@ -89,16 +65,7 @@
                 <h3 class="security-title">密码</h3>
                 <p class="security-desc">定期更新密码有助于保护账户安全</p>
               </div>
-              <el-button @click="showPasswordDialog = true">修改密码</el-button>
-            </div>
-
-            <!-- 安全问题 -->
-            <div class="security-item">
-              <div class="security-info">
-                <h3 class="security-title">安全问题</h3>
-                <p class="security-desc">用于找回密码时验证身份</p>
-              </div>
-              <el-button @click="showSecurityDialog = true">修改安全问题</el-button>
+              <el-button @click="handleChangePassword">修改密码</el-button>
             </div>
           </div>
         </div>
@@ -171,117 +138,27 @@
           </div>
         </div>
       </div>
-
-      <!-- 修改密码对话框 -->
-      <el-dialog
-        v-model="showPasswordDialog"
-        title="修改密码"
-        width="500px"
-        :close-on-click-modal="false"
-      >
-        <el-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-width="100px">
-          <el-form-item label="当前密码" prop="currentPassword">
-            <el-input
-              v-model="passwordForm.currentPassword"
-              type="password"
-              placeholder="请输入当前密码"
-              show-password
-            />
-          </el-form-item>
-          <el-form-item label="新密码" prop="newPassword">
-            <el-input
-              v-model="passwordForm.newPassword"
-              type="password"
-              placeholder="请输入新密码（至少6位）"
-              show-password
-            />
-          </el-form-item>
-          <el-form-item label="确认密码" prop="confirmPassword">
-            <el-input
-              v-model="passwordForm.confirmPassword"
-              type="password"
-              placeholder="请再次输入新密码"
-              show-password
-            />
-          </el-form-item>
-        </el-form>
-        <template #footer>
-          <el-button @click="showPasswordDialog = false">取消</el-button>
-          <el-button type="primary" @click="handleChangePassword" :loading="passwordLoading">
-            确认修改
-          </el-button>
-        </template>
-      </el-dialog>
-
-      <!-- 修改安全问题对话框 -->
-      <el-dialog
-        v-model="showSecurityDialog"
-        title="修改安全问题"
-        width="500px"
-        :close-on-click-modal="false"
-      >
-        <el-form ref="securityFormRef" :model="securityForm" :rules="securityRules" label-width="100px">
-          <el-form-item label="当前密码" prop="password">
-            <el-input
-              v-model="securityForm.password"
-              type="password"
-              placeholder="请输入密码验证身份"
-              show-password
-            />
-          </el-form-item>
-          <el-form-item label="安全问题" prop="question">
-            <el-select v-model="securityForm.question" placeholder="请选择安全问题">
-              <el-option label="您的第一个宠物叫什么？" value="您的第一个宠物叫什么？" />
-              <el-option label="您母亲的娘家姓氏是什么？" value="您母亲的娘家姓氏是什么？" />
-              <el-option label="您最喜欢的老师叫什么？" value="您最喜欢的老师叫什么？" />
-              <el-option label="您的出生地是哪里？" value="您的出生地是哪里？" />
-              <el-option label="您最喜欢的电影是什么？" value="您最喜欢的电影是什么？" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="答案" prop="answer">
-            <el-input
-              v-model="securityForm.answer"
-              placeholder="请输入安全问题答案"
-            />
-          </el-form-item>
-        </el-form>
-        <template #footer>
-          <el-button @click="showSecurityDialog = false">取消</el-button>
-          <el-button type="primary" @click="handleChangeSecurity" :loading="securityLoading">
-            确认修改
-          </el-button>
-        </template>
-      </el-dialog>
     </div>
   </MainLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { useCategoryStore } from '../stores/categoryStore'
 import { useLinkStore } from '../stores/linkStore'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { FormInstance, FormRules } from 'element-plus'
 import MainLayout from '../layouts/MainLayout.vue'
 import api from '../utils/api'
+
+// Router
+const router = useRouter()
 
 // Store
 const authStore = useAuthStore()
 const categoryStore = useCategoryStore()
 const linkStore = useLinkStore()
-
-// 状态
-const loading = ref(false)
-const editingProfile = ref(false)
-const showPasswordDialog = ref(false)
-const showSecurityDialog = ref(false)
-const passwordLoading = ref(false)
-const securityLoading = ref(false)
-
-// 表单引用
-const passwordFormRef = ref<FormInstance>()
-const securityFormRef = ref<FormInstance>()
 
 // 用户信息
 const userInfo = computed(() => authStore.user || {
@@ -290,26 +167,6 @@ const userInfo = computed(() => authStore.user || {
   email: '',
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString()
-})
-
-// 个人资料表单
-const profileForm = reactive({
-  username: userInfo.value.username,
-  email: userInfo.value.email
-})
-
-// 修改密码表单
-const passwordForm = reactive({
-  currentPassword: '',
-  newPassword: '',
-  confirmPassword: ''
-})
-
-// 修改安全问题表单
-const securityForm = reactive({
-  password: '',
-  question: '',
-  answer: ''
 })
 
 // 统计信息
@@ -329,42 +186,6 @@ const stats = computed(() => {
   }
 })
 
-// 验证规则
-const passwordRules: FormRules = {
-  currentPassword: [
-    { required: true, message: '请输入当前密码', trigger: 'blur' }
-  ],
-  newPassword: [
-    { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, message: '密码长度至少为6位', trigger: 'blur' }
-  ],
-  confirmPassword: [
-    { required: true, message: '请确认新密码', trigger: 'blur' },
-    {
-      validator: (rule, value, callback) => {
-        if (value !== passwordForm.newPassword) {
-          callback(new Error('两次输入的密码不一致'))
-        } else {
-          callback()
-        }
-      },
-      trigger: 'blur'
-    }
-  ]
-}
-
-const securityRules: FormRules = {
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' }
-  ],
-  question: [
-    { required: true, message: '请选择安全问题', trigger: 'change' }
-  ],
-  answer: [
-    { required: true, message: '请输入答案', trigger: 'blur' }
-  ]
-}
-
 // 格式化日期
 const formatDate = (dateStr: string | undefined) => {
   if (!dateStr) return '未知'
@@ -378,94 +199,10 @@ const formatDate = (dateStr: string | undefined) => {
   })
 }
 
-// 开始编辑个人资料
-const startEditProfile = () => {
-  profileForm.username = userInfo.value.username
-  profileForm.email = userInfo.value.email
-  editingProfile.value = true
-}
-
-// 取消编辑
-const cancelEditProfile = () => {
-  profileForm.username = userInfo.value.username
-  profileForm.email = userInfo.value.email
-  editingProfile.value = false
-}
-
-// 保存个人资料
-const saveProfile = async () => {
-  if (!profileForm.username || !profileForm.email) {
-    ElMessage.warning('请填写完整信息')
-    return
-  }
-
-  loading.value = true
-  try {
-    // TODO: 调用后端API更新用户信息
-    await new Promise(resolve => setTimeout(resolve, 1000)) // 模拟API调用
-    
-    ElMessage.success('个人资料更新成功')
-    editingProfile.value = false
-    
-    // 更新store中的用户信息
-    await authStore.checkAuthStatus()
-  } catch (error) {
-    ElMessage.error('更新失败，请稍后重试')
-  } finally {
-    loading.value = false
-  }
-}
-
-// 修改密码
-const handleChangePassword = async () => {
-  const valid = await passwordFormRef.value?.validate()
-  if (!valid) return
-
-  passwordLoading.value = true
-  try {
-    // TODO: 调用后端API修改密码
-    await new Promise(resolve => setTimeout(resolve, 1000)) // 模拟API调用
-    
-    ElMessage.success('密码修改成功，请重新登录')
-    showPasswordDialog.value = false
-    
-    // 清空表单
-    passwordForm.currentPassword = ''
-    passwordForm.newPassword = ''
-    passwordForm.confirmPassword = ''
-    
-    // 退出登录
-    authStore.logout()
-    window.location.href = '/login'
-  } catch (error) {
-    ElMessage.error('修改失败，请检查当前密码是否正确')
-  } finally {
-    passwordLoading.value = false
-  }
-}
-
-// 修改安全问题
-const handleChangeSecurity = async () => {
-  const valid = await securityFormRef.value?.validate()
-  if (!valid) return
-
-  securityLoading.value = true
-  try {
-    // TODO: 调用后端API修改安全问题
-    await new Promise(resolve => setTimeout(resolve, 1000)) // 模拟API调用
-    
-    ElMessage.success('安全问题修改成功')
-    showSecurityDialog.value = false
-    
-    // 清空表单
-    securityForm.password = ''
-    securityForm.question = ''
-    securityForm.answer = ''
-  } catch (error) {
-    ElMessage.error('修改失败，请检查密码是否正确')
-  } finally {
-    securityLoading.value = false
-  }
+// 修改密码 - 跳转到忘记密码页面
+const handleChangePassword = () => {
+  // 跳转到忘记密码页面
+  router.push('/forgot-password')
 }
 
 // 删除账户
@@ -572,25 +309,6 @@ onMounted(async () => {
   margin: 0;
 }
 
-.edit-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: #f5f7fa;
-  border: none;
-  border-radius: 8px;
-  color: #667eea;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.edit-btn:hover {
-  background: #667eea;
-  color: white;
-}
-
 /* 信息网格 */
 .info-grid {
   display: grid;
@@ -641,16 +359,6 @@ onMounted(async () => {
   font-size: 14px;
   color: #8492a6;
   margin: 0;
-}
-
-/* 编辑操作 */
-.edit-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 1px solid #e8ecf1;
 }
 
 /* 安全设置 */
