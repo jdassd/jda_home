@@ -48,12 +48,24 @@
         <div class="stat-card gradient-info">
           <div class="stat-icon">
             <svg width="32" height="32" viewBox="0 0 32 32" fill="currentColor">
-              <path d="M16 2a14 14 0 100 28 14 14 0 000-28zm1 21h-2v-2h2v2zm0-4h-2v-8h2v8z"/>
+              <path d="M16 2C8.268 2 2 8.268 2 16s6.268 14 14 14 14-6.268 14-14S23.732 2 16 2zm-1 21h-2v-2h2v2zm4 0h-2v-2h2v2zm-4-4h-2v-8h2v8zm4 0h-2v-8h2v8z"/>
             </svg>
           </div>
           <div class="stat-info">
-            <div class="stat-number">{{ recentAddedCount }}</div>
-            <div class="stat-label">今日新增</div>
+            <div class="stat-number">{{ publicLinksCount }}</div>
+            <div class="stat-label">公开链接数</div>
+          </div>
+        </div>
+        
+        <div class="stat-card gradient-warning">
+          <div class="stat-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="currentColor">
+              <path d="M18 6v2h8v2h-2v18a2 2 0 01-2 2H10a2 2 0 01-2-2V10H6V8h8V6a2 2 0 012-2h2a2 2 0 012 2zm-2 0h-2v2h2V6zm-6 4v18h10V10H10zm2 4h2v10h-2V14zm4 0h2v10h-2V14z"/>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-number">{{ privateLinksCount }}</div>
+            <div class="stat-label">私有链接数</div>
           </div>
         </div>
       </div>
@@ -438,9 +450,12 @@ const linkForm = ref({
 })
 
 // 计算属性
-const recentAddedCount = computed(() => {
-  // 模拟今日新增数据
-  return Math.floor(Math.random() * 5) + 1
+const publicLinksCount = computed(() => {
+  return linkStore.links.filter(link => link.isPublic).length
+})
+
+const privateLinksCount = computed(() => {
+  return linkStore.links.filter(link => !link.isPublic).length
 })
 
 // 检查是否为emoji
@@ -769,7 +784,7 @@ onMounted(async () => {
   margin: 0 auto 32px;
   padding: 0 20px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
 }
 
@@ -800,7 +815,12 @@ onMounted(async () => {
 }
 
 .stat-card.gradient-info {
-  background: linear-gradient(135deg, #f5365c 0%, #fb6340 100%);
+  background: linear-gradient(135deg, #11cdef 0%, #1171ef 100%);
+  color: white;
+}
+
+.stat-card.gradient-warning {
+  background: linear-gradient(135deg, #fb6340 0%, #f5365c 100%);
   color: white;
 }
 
@@ -1405,6 +1425,12 @@ onMounted(async () => {
 }
 
 /* 响应式设计 */
+@media (max-width: 1024px) {
+  .stats-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .header-content {
     flex-direction: column;
@@ -1413,7 +1439,7 @@ onMounted(async () => {
   }
   
   .stats-cards {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
   
   .dialog {
