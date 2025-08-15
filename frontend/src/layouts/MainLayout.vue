@@ -38,7 +38,7 @@
 
         <div class="navbar-actions">
           <div v-if="authStore.isAuthenticated" class="user-menu">
-            <div class="user-avatar" @click="showUserDropdown = !showUserDropdown">
+            <div class="user-avatar" @click.stop="showUserDropdown = !showUserDropdown">
               <div class="avatar-circle">
                 {{ authStore.user?.username?.charAt(0)?.toUpperCase() || 'U' }}
               </div>
