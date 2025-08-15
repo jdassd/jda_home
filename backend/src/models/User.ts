@@ -7,6 +7,8 @@ export class User extends Model {
   public username!: string;
   public email!: string;
   public password!: string;
+  public securityQuestion!: string;
+  public securityAnswer!: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -19,6 +21,17 @@ export class User extends Model {
   // Validate password
   public async validatePassword(password: string): Promise<boolean> {
     return bcrypt.compare(password, this.password);
+  }
+
+  // Hash the security answer before saving
+  public async setSecurityAnswer(answer: string): Promise<void> {
+    const saltRounds = 10;
+    this.securityAnswer = await bcrypt.hash(answer.toLowerCase().trim(), saltRounds);
+  }
+
+  // Validate security answer
+  public async validateSecurityAnswer(answer: string): Promise<boolean> {
+    return bcrypt.compare(answer.toLowerCase().trim(), this.securityAnswer);
   }
 }
 
@@ -49,6 +62,16 @@ export const initUserModel = (sequelize: Sequelize) => {
       password: {
         type: DataTypes.STRING,
         allowNull: false,
+      },
+      securityQuestion: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        field: 'security_question',
+      },
+      securityAnswer: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        field: 'security_answer',
       },
     },
     {

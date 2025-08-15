@@ -190,6 +190,69 @@
                 <span v-if="errors.confirmPassword" class="error-message">{{ errors.confirmPassword }}</span>
               </div>
 
+              <!-- 安全问题选择 -->
+              <div class="form-group">
+                <label class="form-label">安全问题</label>
+                <div class="input-wrapper">
+                  <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2z" clip-rule="evenodd"/>
+                  </svg>
+                  <select
+                    v-model="form.securityQuestion"
+                    class="form-input"
+                    @change="handleQuestionChange"
+                    required
+                  >
+                    <option value="">请选择安全问题</option>
+                    <option value="您的出生地是哪里？">您的出生地是哪里？</option>
+                    <option value="您母亲的姓名是什么？">您母亲的姓名是什么？</option>
+                    <option value="您的第一只宠物叫什么名字？">您的第一只宠物叫什么名字？</option>
+                    <option value="您就读的第一所学校名称？">您就读的第一所学校名称？</option>
+                    <option value="您最喜欢的老师姓名？">您最喜欢的老师姓名？</option>
+                    <option value="您最喜欢的电影名称？">您最喜欢的电影名称？</option>
+                    <option value="custom">自定义问题</option>
+                  </select>
+                </div>
+                <span v-if="errors.securityQuestion" class="error-message">{{ errors.securityQuestion }}</span>
+              </div>
+
+              <!-- 自定义问题输入框 -->
+              <div class="form-group" v-if="showCustomQuestion">
+                <label class="form-label">自定义问题</label>
+                <div class="input-wrapper">
+                  <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                  </svg>
+                  <input
+                    type="text"
+                    v-model="form.customQuestion"
+                    class="form-input"
+                    placeholder="请输入您的自定义问题"
+                    required
+                  />
+                </div>
+                <span v-if="errors.customQuestion" class="error-message">{{ errors.customQuestion }}</span>
+              </div>
+
+              <!-- 安全问题答案 -->
+              <div class="form-group">
+                <label class="form-label">安全问题答案</label>
+                <div class="input-wrapper">
+                  <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H2v-4l4.257-4.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z" clip-rule="evenodd"/>
+                  </svg>
+                  <input
+                    type="text"
+                    v-model="form.securityAnswer"
+                    class="form-input"
+                    placeholder="请输入安全问题的答案"
+                    required
+                  />
+                </div>
+                <span v-if="errors.securityAnswer" class="error-message">{{ errors.securityAnswer }}</span>
+                <p class="hint-text">提示：答案不区分大小写，请牢记此答案用于找回密码</p>
+              </div>
+
               <!-- 注册按钮 -->
               <button type="submit" class="submit-btn" :disabled="submitting">
                 <span v-if="!submitting">注册</span>
@@ -234,7 +297,10 @@ const form = reactive({
   username: '',
   email: '',
   password: '',
-  confirmPassword: ''
+  confirmPassword: '',
+  securityQuestion: '',
+  customQuestion: '',
+  securityAnswer: ''
 })
 
 // 错误信息
@@ -242,8 +308,25 @@ const errors = reactive({
   username: '',
   email: '',
   password: '',
-  confirmPassword: ''
+  confirmPassword: '',
+  securityQuestion: '',
+  customQuestion: '',
+  securityAnswer: ''
 })
+
+// 是否显示自定义问题输入框
+const showCustomQuestion = ref(false)
+
+// 处理安全问题选择变化
+const handleQuestionChange = () => {
+  if (form.securityQuestion === 'custom') {
+    showCustomQuestion.value = true
+    form.customQuestion = ''
+  } else {
+    showCustomQuestion.value = false
+    form.customQuestion = ''
+  }
+}
 
 // 切换登录/注册
 const toggleForm = () => {
@@ -302,6 +385,24 @@ const validateForm = () => {
       errors.confirmPassword = '两次输入的密码不一致'
       isValid = false
     }
+    
+    // 验证安全问题
+    if (!form.securityQuestion) {
+      errors.securityQuestion = '请选择安全问题'
+      isValid = false
+    } else if (form.securityQuestion === 'custom' && !form.customQuestion) {
+      errors.customQuestion = '请输入自定义问题'
+      isValid = false
+    }
+    
+    // 验证安全问题答案
+    if (!form.securityAnswer) {
+      errors.securityAnswer = '请输入安全问题的答案'
+      isValid = false
+    } else if (form.securityAnswer.length < 2) {
+      errors.securityAnswer = '答案至少需要2个字符'
+      isValid = false
+    }
   }
   
   return isValid
@@ -316,10 +417,14 @@ const handleSubmit = async () => {
   try {
     if (isRegister.value) {
       // 注册
+      const finalQuestion = form.securityQuestion === 'custom' ? form.customQuestion : form.securityQuestion
+      
       const response = await axios.post('http://localhost:3000/api/auth/register', {
         username: form.username,
         email: form.email,
-        password: form.password
+        password: form.password,
+        securityQuestion: finalQuestion,
+        securityAnswer: form.securityAnswer
       })
       
       if (response.data.token) {
@@ -401,7 +506,7 @@ const handleSubmit = async () => {
 
 // 处理忘记密码
 const handleForgotPassword = () => {
-  ElMessage.info('忘记密码功能开发中')
+  router.push('/forgot-password')
 }
 
 
@@ -825,5 +930,28 @@ const handleForgotPassword = () => {
   .social-buttons {
     flex-direction: column;
   }
+}
+
+/* 提示文本 */
+.hint-text {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* 下拉选择框样式 */
+select.form-input {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 20px;
+  padding-right: 40px;
+}
+
+select.form-input:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23667eea' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
 }
 </style>

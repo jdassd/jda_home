@@ -7,7 +7,14 @@ import { Op } from 'sequelize';
 // Register a new user
 export const register = async (req: Request, res: Response) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, securityQuestion, securityAnswer } = req.body;
+
+    // 验证必填字段
+    if (!username || !email || !password || !securityQuestion || !securityAnswer) {
+      return res.status(400).json({
+        message: '请填写所有必填字段',
+      });
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({
@@ -26,8 +33,10 @@ export const register = async (req: Request, res: Response) => {
     const user = User.build({
       username,
       email,
+      securityQuestion,
     });
     await user.setPassword(password);
+    await user.setSecurityAnswer(securityAnswer);
 
     // Save user to database
     await sequelize.transaction(async (t) => {
@@ -138,6 +147,91 @@ export const login = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Login error:', error);
+    return res.status(500).json({
+      message: '服务器内部错误',
+    });
+  }
+};
+
+// 验证安全问题 - 获取安全问题
+export const getSecurityQuestion = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        message: '请提供邮箱地址',
+      });
+    }
+
+    // 查找用户
+    const user = await User.findOne({
+      where: { email },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        message: '该邮箱未注册',
+      });
+    }
+
+    return res.status(200).json({
+      securityQuestion: user.securityQuestion,
+    });
+  } catch (error) {
+    console.error('Get security question error:', error);
+    return res.status(500).json({
+      message: '服务器内部错误',
+    });
+  }
+};
+
+// 重置密码
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { email, securityAnswer, newPassword } = req.body;
+
+    if (!email || !securityAnswer || !newPassword) {
+      return res.status(400).json({
+        message: '请填写所有必填字段',
+      });
+    }
+
+    // 验证新密码长度
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        message: '新密码长度至少为6个字符',
+      });
+    }
+
+    // 查找用户
+    const user = await User.findOne({
+      where: { email },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        message: '该邮箱未注册',
+      });
+    }
+
+    // 验证安全问题答案
+    const isAnswerValid = await user.validateSecurityAnswer(securityAnswer);
+    if (!isAnswerValid) {
+      return res.status(401).json({
+        message: '安全问题答案错误',
+      });
+    }
+
+    // 更新密码
+    await user.setPassword(newPassword);
+    await user.save();
+
+    return res.status(200).json({
+      message: '密码重置成功，请使用新密码登录',
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
     return res.status(500).json({
       message: '服务器内部错误',
     });

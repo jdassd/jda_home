@@ -3,6 +3,7 @@ import HomeView from '../pages/HomeView.vue'
 import LoginView from '../pages/LoginView.vue'
 import CategoryView from '../pages/CategoryView.vue'
 import UserHomeView from '../pages/UserHomeView.vue'
+import ForgotPasswordView from '../pages/ForgotPasswordView.vue'
 
 // Define routes
 const routes = [
